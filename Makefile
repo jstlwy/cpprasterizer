@@ -8,9 +8,10 @@ LDFLAGS := $(sdlf) -F /Library/Frameworks/
 .PHONY: all clean
 
 src := $(wildcard *.cpp)
-#headers := $(filter-out main.h, $(patsubst %.cpp, %.h, $(src)))
-obj := $(patsubst %.cpp, %.o, $(src))
-dep := $(patsubst %.cpp, %.d, $(src))
+headers := $(patsubst %.cpp, %.h, $(filter-out main.cpp, $(src)))
+#obj := $(patsubst $(srcdir)/%.cpp, $(objdir)/%.o, $(src))
+obj := $(addsuffix .o, $(basename $(src)))
+dep := $(addsuffix .d, $(basename $(obj)))
 bin := rasterizer
 
 all: $(bin)
