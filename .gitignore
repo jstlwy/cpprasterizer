@@ -1,5 +1,6 @@
-# macOS-specific
+# User-specific
 .DS_Store
+.vscode/
 
 # Object and dependency files
 *.o

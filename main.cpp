@@ -1,15 +1,20 @@
 #include <SDL.h>
+#include <iomanip>
+#include <ios>
 #include <iostream>
 #include <chrono>
 #include <cmath>
+#include <ostream>
 //#include <thread>
 #include <vector>
 
 constexpr int SCREEN_WIDTH = 1920;
 constexpr int SCREEN_HEIGHT = 1080;
-constexpr float ASPECT_RATIO = static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT;
 constexpr int X_MID_SCREEN = SCREEN_WIDTH / 2;
 constexpr int Y_MID_SCREEN = SCREEN_HEIGHT / 2;
+constexpr int NUM_PIXELS = SCREEN_WIDTH * SCREEN_HEIGHT;
+constexpr int TEXTURE_PITCH = SCREEN_WIDTH * sizeof(std::uint32_t);
+constexpr float ASPECT_RATIO = static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT;
 constexpr float d = 1.0;
 constexpr float viewportSize = 1.0;
 
@@ -40,6 +45,240 @@ struct Square {
 	Point3D d;
 };
 
+template <typename T>
+void print_hex(std::ostream& stream, const T value, const int width = 0);
+void print_argb8888(std::uint32_t color);
+void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, const std::vector<std::uint32_t>& pixels);
+bool wait_for_input();
+SDL_Point project2d(const Point3D& p);
+Point3D project_vertex(const Point3D& p);
+std::vector<float> interpolate(float i0, float d0, float i1, float d1);
+void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
+	const int ax, const int ay, const int bx, const int by);
+void draw_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
+	const Point3D p0, const Point3D p1, const Point3D p2);
+void draw_filled_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2);
+void draw_shaded_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2);
+
+
+int main()
+{
+	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	{
+		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	SDL_Window* window = SDL_CreateWindow(
+		"Software Rasterizer",
+		SDL_WINDOWPOS_UNDEFINED,
+		SDL_WINDOWPOS_UNDEFINED,
+		SCREEN_WIDTH,
+		SCREEN_HEIGHT,
+		SDL_WINDOW_SHOWN
+	);
+	if (window == nullptr)
+	{
+		std::cerr << "Error when creating window: " << SDL_GetError() << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+	if (renderer == nullptr)
+	{
+		std::cerr << "Error when creating renderer: " << SDL_GetError() << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	SDL_Texture* texture = SDL_CreateTexture(
+		renderer,
+		SDL_PIXELFORMAT_ARGB8888,
+		SDL_TEXTUREACCESS_STATIC,
+		SCREEN_WIDTH,
+		SCREEN_HEIGHT
+	);
+	if (texture == nullptr)
+	{
+		std::cerr << "Error when creating texture: " << SDL_GetError() << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	// Init colors
+	const std::uint32_t red   = 0xFFFF0000;
+	const std::uint32_t green = 0xFF00FF00;
+	const std::uint32_t blue  = 0xFF0000FF;
+	const std::uint32_t black = 0xFF000000;
+	const std::uint32_t blank = 0x00FFFFFF;
+
+	std::vector<std::uint32_t> pixels(NUM_PIXELS);
+
+	// Create green triangle
+	Triangle greenTri = {
+		{-200, -250, 0, 0.3},
+		{ 200,   50, 0, 0.1},
+		{  20,  250, 0, 1.0}
+	};
+
+	// Create a cube
+	Square cube_front_verts = {
+		{-2, -0.5, 5, 0},
+		{-2,  0.5, 5, 0},
+		{-1,  0.5, 5, 0},
+		{-1, -0.5, 5, 0}
+	};
+	Square cube_back_verts = {
+		{-2, -0.5, 6, 0},
+		{-2,  0.5, 6, 0},
+		{-1,  0.5, 6, 0},
+		{-1, -0.5, 6, 0}
+	};
+
+	//using frame_len_fps_60 = std::chrono::duration<float, std::ratio<1, 60>>;
+	// Keep rendering until the user chooses to quit
+	bool should_exit = true;
+	while (should_exit)
+	{
+		const auto frame_start_time = std::chrono::system_clock::now();
+
+		std::fill(pixels.begin(), pixels.end(), blank);
+
+		// TRIANGLE
+		// First, draw the shaded triangle
+		const auto shaded_tri_start_time = std::chrono::system_clock::now();
+		draw_shaded_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+		const auto shaded_tri_end_time = std::chrono::system_clock::now();
+		const auto shaded_tri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(shaded_tri_end_time - shaded_tri_start_time);
+		std::cout << "Shaded triangle: " << shaded_tri_ms_elapsed.count() << " ms" << std::endl;
+		// Then draw the triangle's outline
+		const auto tri_start_time = std::chrono::system_clock::now();
+		draw_triangle(pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
+		const auto tri_end_time = std::chrono::system_clock::now();
+		const auto tri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(tri_end_time - tri_start_time);
+		std::cout << "Triangle outline: " << tri_us_elapsed.count() << " us" << std::endl;
+
+		// CUBE
+		const auto cube_start_time = std::chrono::system_clock::now();
+		SDL_Point pfa = project2d(cube_front_verts.a);
+		SDL_Point pfb = project2d(cube_front_verts.b);
+		SDL_Point pfc = project2d(cube_front_verts.c);
+		SDL_Point pfd = project2d(cube_front_verts.d);
+		SDL_Point pba = project2d(cube_back_verts.a);
+		SDL_Point pbb = project2d(cube_back_verts.b);
+		SDL_Point pbc = project2d(cube_back_verts.c);
+		SDL_Point pbd = project2d(cube_back_verts.d);
+		// First, front face
+		draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfa.x, pfa.y, pfb.x, pfb.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfb.x, pfb.y, pfc.x, pfc.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfc.x, pfc.y, pfd.x, pfd.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfd.x, pfd.y, pfa.x, pfa.y);
+		// Next, back face
+		draw_line_bresenham(pixels, SCREEN_WIDTH, red, pba.x, pba.y, pbb.x, pbb.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbb.x, pbb.y, pbc.x, pbc.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbc.x, pbc.y, pbd.x, pbd.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbd.x, pbd.y, pba.x, pba.y);
+		// Finally, lines connecting the faces
+		draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfa.x, pfa.y, pba.x, pba.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfb.x, pfb.y, pbb.x, pbb.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfc.x, pfc.y, pbc.x, pbc.y);
+		draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfd.x, pfd.y, pbd.x, pbd.y);
+		const auto cube_end_time = std::chrono::system_clock::now();
+		const auto cube_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(cube_end_time - cube_start_time);
+		std::cout << "Cube: " << cube_us_elapsed.count() << " us" << std::endl;
+
+		// Finally, show the results
+		render_texture(renderer, texture, pixels);
+
+		const auto frame_end_time = std::chrono::system_clock::now();
+		const auto frame_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end_time - frame_start_time);
+		std::cout << "Frame: " << frame_ms_elapsed.count() << " ms" << std::endl;
+		/*
+		if (frame_ms_elapsed < fps_60)
+			std::this_thread::sleep_for(fps_limit - frame_ms_elapsed);
+		*/
+
+		should_exit = wait_for_input();
+	}
+
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+	return EXIT_SUCCESS;
+}
+
+
+template <typename T>
+void print_hex(std::ostream& stream, const T value, const int width)
+{
+	std::ios original_formatting = std::ios(nullptr);
+	original_formatting.copyfmt(stream);
+	if (width <= 0)
+		stream << std::hex << value;
+	else
+		stream << std::setfill('0') << std::setw(width) << std::hex << value;
+	stream.copyfmt(original_formatting);
+}
+
+
+void print_argb8888(std::uint32_t color)
+{
+	const unsigned int a = (color & 0xFF000000) >> 24;
+	const unsigned int r = (color & 0x00FF0000) >> 16;
+	const unsigned int g = (color & 0x0000FF00) >> 8;
+	const unsigned int b = color & 0x000000FF;
+	std::cout << " A R G B" << std::endl;
+	print_hex(std::cout, a, 2);
+	print_hex(std::cout, r, 2);
+	print_hex(std::cout, g, 2);
+	print_hex(std::cout, b, 2);
+	std::cout << std::endl;
+}
+
+
+void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, const std::vector<std::uint32_t>& pixels)
+{
+	SDL_RenderClear(renderer);
+	SDL_UpdateTexture(texture, nullptr, &pixels[0], TEXTURE_PITCH);
+	SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+	SDL_RenderPresent(renderer);
+}
+
+
+bool wait_for_input()
+{
+	bool should_exit = false;
+	bool should_continue = false;
+	SDL_Event event;
+	do
+	{
+		SDL_PollEvent(&event);
+		if (event.type == SDL_QUIT)
+		{
+			should_continue = true;
+			should_exit = true;	
+		}
+		else if (event.type == SDL_KEYDOWN)
+		{
+			switch (event.key.keysym.sym)
+			{
+				case SDLK_RETURN:
+				case SDLK_SPACE:
+					should_continue = true;
+					break;
+				case SDLK_ESCAPE:
+					should_continue = true;
+					should_exit = true;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	while (!should_continue);
+	return should_exit;
+}
+
+
 SDL_Point project2d(const Point3D& p)
 {
 	const float p_x = p.x * (d / p.z);
@@ -50,7 +289,7 @@ SDL_Point project2d(const Point3D& p)
 }
 
 
-Point3D projectVertex(const Point3D& p)
+Point3D project_vertex(const Point3D& p)
 {
 	const float p_x = p.x * (d / p.z);
 	const float c_x = p_x * (SCREEN_WIDTH / viewportSize);
@@ -77,18 +316,68 @@ std::vector<float> interpolate(float i0, float d0, float i1, float d1)
 }
 
 
-void draw_line_bresenham(SDL_Renderer* r, const int ax, const int ay, const int bx, const int by)
+void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int width,
+	const std::uint32_t color, const int ax, const int ay, const int bx, const int by)
 {
 	const int dx = std::abs(bx - ax);
 	const int dy = std::abs(by - ay);
-	int x;
-	int y;
+	int x = ax;
+	int y = ay;
 
-	if (dx > dy)
+	if (dx == 0 && dy == 0)
+	{
+		pixels.at((y * width) + x) = color;
+	}
+	else if (dx == 0)
+	{
+		int y_end;
+		if (ay < by)
+		{
+			y_end = by;
+		}
+		else
+		{
+			y = by;
+			y_end = ay;
+		}
+		int row = y * width;
+		const int row_end = y_end * width;
+		while (row <= row_end)
+		{
+			pixels.at(row + x) = color;
+			row += width;
+		}
+	}
+	else if (dy == 0)
+	{
+		int x_end;
+		if (ax < bx)
+		{
+			x_end = bx;
+		}
+		else
+		{
+			x = bx;
+			x_end = ax;
+		}
+		const int row = y * width;
+		while (x <= x_end)
+		{
+			pixels.at(row + x) = color;
+			x++;
+		}
+	}
+	else if (dx > dy)
 	{
 		int sy = 1;
 		int x_end;
-		if (ax > bx)
+		if (ax < bx)
+		{
+			x_end = bx;
+			if (y > by)
+				sy = -1;
+		}
+		else
 		{
 			x = bx;
 			x_end = ax;
@@ -96,22 +385,14 @@ void draw_line_bresenham(SDL_Renderer* r, const int ax, const int ay, const int 
 			if (y > ay)
 				sy = -1;
 		}
-		else
-		{
-			x = ax;
-			x_end = bx;
-			y = ay;
-			if (y > by)
-				sy = -1;
-		}
 
 		const int two_dy = 2 * dy;
 		const int two_diff_dy_dx = 2 * (dy - dx);
 		int p = two_dy - dx;
-
+		
 		while (x <= x_end)
 		{
-			SDL_RenderDrawPoint(r, x, y);
+			pixels.at((y * width) + x) = color;
 			x++;
 			if (p < 0)
 			{
@@ -128,7 +409,13 @@ void draw_line_bresenham(SDL_Renderer* r, const int ax, const int ay, const int 
 	{
 		int sx = 1;
 		int y_end;
-		if (ay > by)
+		if (ay < by)
+		{
+			if (x > bx)
+				sx = -1;
+			y_end = by;
+		}
+		else
 		{
 			x = bx;
 			if (x > ax)
@@ -136,22 +423,14 @@ void draw_line_bresenham(SDL_Renderer* r, const int ax, const int ay, const int 
 			y = by;
 			y_end = ay;
 		}
-		else
-		{
-			x = ax;
-			if (x > bx)
-				sx = -1;
-			y = ay;
-			y_end = by;
-		}
 
 		const int two_dx = 2 * dx;
 		const int two_diff_dx_dy = 2 * (dx - dy);
 		int p = two_dx - dy;
-
+		
 		while (y <= y_end)
 		{
-			SDL_RenderDrawPoint(r, x, y);
+			pixels.at((y * width) + x) = color;
 			y++;
 			if (p < 0)
 			{
@@ -167,58 +446,23 @@ void draw_line_bresenham(SDL_Renderer* r, const int ax, const int ay, const int 
 }
 
 
-void drawLine(SDL_Renderer* r, Point3D p0, Point3D p1)
-{   
-	const float dx = p1.x - p0.x;
-	const float dy = p1.y - p0.y;
-
-	if (abs(dx) > abs(dy)) // Longer horizontally
-	{
-		if (p0.x > p1.x)
-			std::swap(p0, p1);
-		std::vector<float> yVals = interpolate(p0.x, p0.y, p1.x, p1.y);
-		// Draw all the pixels in the line
-		const int x0 = static_cast<int>(p0.x);
-		for (int x = (int) p0.x; x <= p1.x; x++)
-		{
-			int xPixel = X_MID_SCREEN + x;
-			int yPixel = Y_MID_SCREEN - std::round(yVals.at(x - x0));
-			SDL_RenderDrawPoint(r, xPixel, yPixel);
-		}
-	}
-	else // Longer vertically
-	{
-		if (p0.y > p1.y)
-			std::swap(p0, p1);
-		std::vector<float> xVals = interpolate(p0.y, p0.x, p1.y, p1.x);
-		// Draw all the pixels in the line
-		const int y0 = static_cast<int>(p0.y);
-		for (int y = y0; y <= p1.y; y++)
-		{
-			int xPixel = X_MID_SCREEN + std::round(xVals.at(y - y0));
-			int yPixel = Y_MID_SCREEN - y;
-			SDL_RenderDrawPoint(r, xPixel, yPixel);
-		}
-	}
-}
-
-
-void draw_triangle(SDL_Renderer* r, const Point3D p0, const Point3D p1, const Point3D p2, const SDL_Color c)
+void draw_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
+	const Point3D p0, const Point3D p1, const Point3D p2)
 {
-	const int p0x = X_MID_SCREEN + static_cast<int>(p0.x);
-	const int p0y = Y_MID_SCREEN - static_cast<int>(p0.y);
-	const int p1x = X_MID_SCREEN + static_cast<int>(p1.x);
-	const int p1y = Y_MID_SCREEN - static_cast<int>(p1.y);
-	const int p2x = X_MID_SCREEN + static_cast<int>(p2.x);
-	const int p2y = Y_MID_SCREEN - static_cast<int>(p2.y);
-	SDL_SetRenderDrawColor(r, c.r, c.g, c.b, c.a);
-	draw_line_bresenham(r, p0x, p0y, p1x, p1y);
-	draw_line_bresenham(r, p1x, p1y, p2x, p2y);
-	draw_line_bresenham(r, p2x, p2y, p0x, p0y);
+	const int p0x = X_MID_SCREEN + std::round(p0.x);
+	const int p0y = Y_MID_SCREEN - std::round(p0.y);
+	const int p1x = X_MID_SCREEN + std::round(p1.x);
+	const int p1y = Y_MID_SCREEN - std::round(p1.y);
+	const int p2x = X_MID_SCREEN + std::round(p2.x);
+	const int p2y = Y_MID_SCREEN - std::round(p2.y);
+	draw_line_bresenham(pixels, width, color, p0x, p0y, p1x, p1y);
+	draw_line_bresenham(pixels, width, color, p1x, p1y, p2x, p2y);
+	draw_line_bresenham(pixels, width, color, p2x, p2y, p0x, p0y);
 }
 
 
-void drawFilledTriangle(SDL_Renderer* r, Point3D p0, Point3D p1, Point3D p2, const SDL_Color c)
+void draw_filled_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width,  const std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2)
 {
 	// Sort points so that y0 <= y1 <= y2
 	if(p1.y < p0.y)
@@ -255,22 +499,29 @@ void drawFilledTriangle(SDL_Renderer* r, Point3D p0, Point3D p1, Point3D p2, con
 	}
 
 	// Draw the horizontal segments
-	SDL_SetRenderDrawColor(r, c.r, c.g, c.b, c.a);
 	for (float y = p0.y; y < p2.y; y++)
 	{
+		const int yPixel = Y_MID_SCREEN - std::round(y);
+		const int row = yPixel * width;
 		int n = static_cast<int>(y - p0.y);
 		for (float x = xLeft.at(n); x < xRight.at(n); x++)
 		{
 			int xPixel = X_MID_SCREEN + std::round(x);
-			int yPixel = Y_MID_SCREEN - std::round(y);
-			SDL_RenderDrawPoint(r, xPixel, yPixel);
+			pixels.at(row + xPixel) = color;
 		}
 	}
 }
 
 
-void drawShadedTriangle(SDL_Renderer* r, Point3D p0, Point3D p1, Point3D p2, SDL_Color c)
+void draw_shaded_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2)
 {
+	// ARGB8888
+	const int a = (color & 0xFF000000) >> 24;
+	const int r = (color & 0x00FF0000) >> 16;
+	const int g = (color & 0x0000FF00) >> 8;
+	const int b = color & 0x000000FF;
+
 	// Sort the points so that y0 <= y1 <= y2
 	if (p1.y < p0.y)
 		std::swap(p1, p0);
@@ -321,217 +572,24 @@ void drawShadedTriangle(SDL_Renderer* r, Point3D p0, Point3D p1, Point3D p2, SDL
 	const float y0 = p0.y;
 	for (float y = y0; y <= p2.y; y++)
 	{
+		const int yPixel = Y_MID_SCREEN - std::round(y);
+		const int row = yPixel * width;
 		int i = static_cast<int>(y - y0);
 		float x_l = xLeft.at(i);
 		float x_r = xRight.at(i);
 		std::vector<float> hSeg = interpolate(x_l, hLeft.at(i), x_r, hRight.at(i));
 		for (float x = x_l; x <= x_r; x++)
 		{
-			// Get pixel coordinates
-			const int xPixel = X_MID_SCREEN + std::round(x);
-			const int yPixel = Y_MID_SCREEN - std::round(y);
 			// Get pixel hue
 			const int j = static_cast<int>(x - x_l);
-			const float hVal = hSeg.at(j);
-			SDL_SetRenderDrawColor(
-				r,
-				std::round(c.r * hVal),
-				std::round(c.g * hVal),
-				std::round(c.b * hVal),
-				c.a
-			);
-			SDL_RenderDrawPoint(r, xPixel, yPixel);
+			const float h = hSeg.at(j);
+			const int pix_r = std::round(h * r);
+			const int pix_g = std::round(h * g);
+			const int pix_b = std::round(h * b);
+			std::uint32_t pix_color = 0 | (a << 24) | (pix_r << 16) | (pix_g << 8) | pix_b;
+
+			const int xPixel = X_MID_SCREEN + std::round(x);
+			pixels.at(row + xPixel) = pix_color;
 		}
 	}
-}
-
-
-int main()
-{
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
-	{
-		std::cerr << "SDL_Init error: " << SDL_GetError() << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	SDL_Window* window = SDL_CreateWindow(
-		"Software Rasterizer",
-		SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED,
-		SCREEN_WIDTH,
-		SCREEN_HEIGHT,
-		SDL_WINDOW_SHOWN
-	);
-	if (window == nullptr)
-	{
-		std::cerr << "Window error: " << SDL_GetError() << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
-	if (renderer == nullptr)
-	{
-		std::cerr << "Renderer error: " << SDL_GetError() << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	// Init colors
-	SDL_Color red   = {255,   0,   0, 255};
-	SDL_Color green = {  0, 255,   0, 255};
-	SDL_Color blue  = {  0,   0, 255, 255};
-	SDL_Color black = {  0,   0,   0, 255};
-
-	// Create green triangle
-	Triangle greenTri = {
-		{-200, -250, 0, 0.3},
-		{ 200,   50, 0, 0.1},
-		{  20,  250, 0, 1.0}
-	};
-
-	// Create a cube
-	Square cube_front_verts = {
-		{-2, -0.5, 5, 0},
-		{-2,  0.5, 5, 0},
-		{-1,  0.5, 5, 0},
-		{-1, -0.5, 5, 0}
-	};
-	Square cube_back_verts = {
-		{-2, -0.5, 6, 0},
-		{-2,  0.5, 6, 0},
-		{-1,  0.5, 6, 0},
-		{-1, -0.5, 6, 0}
-	};
-
-	//using frame_len_fps_60 = std::chrono::duration<float, std::ratio<1, 60>>;
-	// Keep rendering until the user chooses to quit
-	bool should_continue = true;
-	while (should_continue)
-	{
-		const auto frame_start_time = std::chrono::system_clock::now();
-
-		// Select the color with which to fill the screen
-		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-		// Clear the entire screen to the selected color
-		SDL_RenderClear(renderer);
-
-		// TRIANGLE
-		// First, draw the filled triangle
-		const auto shaded_tri_start_time = std::chrono::system_clock::now();
-		drawShadedTriangle(renderer, greenTri.a, greenTri.b, greenTri.c, green);
-		const auto shaded_tri_end_time = std::chrono::system_clock::now();
-		const auto shaded_tri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(shaded_tri_end_time - shaded_tri_start_time);
-		std::cout << "Shaded triangle: " << shaded_tri_ms_elapsed.count() << " ms" << std::endl;
-		// Then draw the triangle's outline
-		const auto tri_start_time = std::chrono::system_clock::now();
-		draw_triangle(renderer, greenTri.a, greenTri.b, greenTri.c, black);
-		const auto tri_end_time = std::chrono::system_clock::now();
-		const auto tri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(tri_end_time - tri_start_time);
-		std::cout << "Triangle: " << tri_us_elapsed.count() << " us" << std::endl;
-
-		// CUBE (Gambetta)
-		/*
-		Point3D pfa = projectVertex(cube_front_verts.a);
-		Point3D pfb = projectVertex(cube_front_verts.b);
-		Point3D pfc = projectVertex(cube_front_verts.c);
-		Point3D pfd = projectVertex(cube_front_verts.d);
-		Point3D pba = projectVertex(cube_back_verts.a);
-		Point3D pbb = projectVertex(cube_back_verts.b);
-		Point3D pbc = projectVertex(cube_back_verts.c);
-		Point3D pbd = projectVertex(cube_back_verts.d);
-		// First, front face
-		SDL_SetRenderDrawColor(renderer, blue.r, blue.g, blue.b, blue.a);
-		drawLine(renderer, pfa, pfb);
-		drawLine(renderer, pfb, pfc);
-		drawLine(renderer, pfc, pfd);
-		drawLine(renderer, pfd, pfa);
-		// Next, back face
-		SDL_SetRenderDrawColor(renderer, red.r, red.g, red.b, red.a);
-		drawLine(renderer, pba, pbb);
-		drawLine(renderer, pbb, pbc);
-		drawLine(renderer, pbc, pbd);
-		drawLine(renderer, pbd, pba);
-		// Finally, lines connecting the faces
-		SDL_SetRenderDrawColor(renderer, green.r, green.g, green.b, green.a);
-		drawLine(renderer, pfa, pba);
-		drawLine(renderer, pfb, pbb);
-		drawLine(renderer, pfc, pbc);
-		drawLine(renderer, pfd, pbd);
-		*/
-
-		// CUBE
-		const auto cube_start_time = std::chrono::system_clock::now();
-		SDL_Point pfa = project2d(cube_front_verts.a);
-		SDL_Point pfb = project2d(cube_front_verts.b);
-		SDL_Point pfc = project2d(cube_front_verts.c);
-		SDL_Point pfd = project2d(cube_front_verts.d);
-		SDL_Point pba = project2d(cube_back_verts.a);
-		SDL_Point pbb = project2d(cube_back_verts.b);
-		SDL_Point pbc = project2d(cube_back_verts.c);
-		SDL_Point pbd = project2d(cube_back_verts.d);
-		// First, front face
-		SDL_SetRenderDrawColor(renderer, blue.r, blue.g, blue.b, blue.a);
-		draw_line_bresenham(renderer, pfa.x, pfa.y, pfb.x, pfb.y);
-		draw_line_bresenham(renderer, pfb.x, pfb.y, pfc.x, pfc.y);
-		draw_line_bresenham(renderer, pfc.x, pfc.y, pfd.x, pfd.y);
-		draw_line_bresenham(renderer, pfd.x, pfd.y, pfa.x, pfa.y);
-		// Next, back face
-		SDL_SetRenderDrawColor(renderer, red.r, red.g, red.b, red.a);
-		draw_line_bresenham(renderer, pba.x, pba.y, pbb.x, pbb.y);
-		draw_line_bresenham(renderer, pbb.x, pbb.y, pbc.x, pbc.y);
-		draw_line_bresenham(renderer, pbc.x, pbc.y, pbd.x, pbd.y);
-		draw_line_bresenham(renderer, pbd.x, pbd.y, pba.x, pba.y);
-		// Finally, lines connecting the faces
-		SDL_SetRenderDrawColor(renderer, green.r, green.g, green.b, green.a);
-		draw_line_bresenham(renderer, pfa.x, pfa.y, pba.x, pba.y);
-		draw_line_bresenham(renderer, pfb.x, pfb.y, pbb.x, pbb.y);
-		draw_line_bresenham(renderer, pfc.x, pfc.y, pbc.x, pbc.y);
-		draw_line_bresenham(renderer, pfd.x, pfd.y, pbd.x, pbd.y);
-		const auto cube_end_time = std::chrono::system_clock::now();
-		const auto cube_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(cube_end_time - cube_start_time);
-		std::cout << "Cube: " << cube_us_elapsed.count() << " us" << std::endl;
-
-		// Finally, show the results
-		SDL_RenderPresent(renderer);
-
-		const auto frame_end_time = std::chrono::system_clock::now();
-		const auto frame_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end_time - frame_start_time);
-		std::cout << "Frame: " << frame_ms_elapsed.count() << " ms" << std::endl;
-		/*
-		if (frame_ms_elapsed < fps_60)
-			std::this_thread::sleep_for(fps_limit - frame_ms_elapsed);
-		*/
-
-		// Wait for user input before rendering again
-		SDL_Event event;
-		SDL_PollEvent(&event);
-		while (event.type != SDL_KEYDOWN && event.type != SDL_QUIT)
-		{
-			SDL_PollEvent(&event);
-		}
-		if (event.type == SDL_QUIT)
-		{
-			should_continue = false;
-		}
-		else if (event.type == SDL_KEYDOWN)
-		{
-			switch (event.key.keysym.sym)
-			{
-				case SDLK_RETURN:
-				case SDLK_SPACE:
-				case SDLK_ESCAPE:
-					should_continue = false;
-					break;
-				case SDLK_UP:
-					break;
-				case SDLK_DOWN:
-					break;
-				default :
-					break;
-			}
-		}
-	}
-
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-	return EXIT_SUCCESS;
 }
