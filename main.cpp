@@ -49,6 +49,7 @@ template <typename T>
 void print_hex(std::ostream& stream, const T value, const int width = 0);
 void print_argb8888(std::uint32_t color);
 void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, const std::vector<std::uint32_t>& pixels);
+bool scan_input_for_quit();
 bool wait_for_input();
 SDL_Point project2d(const Point3D& p);
 Point3D project_vertex(const Point3D& p);
@@ -112,14 +113,7 @@ int main()
 	const std::uint32_t black = 0xFF000000;
 	const std::uint32_t blank = 0x00FFFFFF;
 
-	std::vector<std::uint32_t> pixels(NUM_PIXELS);
-
-	// Create green triangle
-	Triangle greenTri = {
-		{-200, -250, 0, 0.3},
-		{ 200,   50, 0, 0.1},
-		{  20,  250, 0, 1.0}
-	};
+	std::vector<std::uint32_t> pixels(NUM_PIXELS, blank);
 
 	// Create a cube
 	Square cube_front_verts = {
@@ -135,70 +129,77 @@ int main()
 		{-1, -0.5, 6, 0}
 	};
 
+	// CUBE
+	const auto cube_start_time = std::chrono::system_clock::now();
+	SDL_Point pfa = project2d(cube_front_verts.a);
+	SDL_Point pfb = project2d(cube_front_verts.b);
+	SDL_Point pfc = project2d(cube_front_verts.c);
+	SDL_Point pfd = project2d(cube_front_verts.d);
+	SDL_Point pba = project2d(cube_back_verts.a);
+	SDL_Point pbb = project2d(cube_back_verts.b);
+	SDL_Point pbc = project2d(cube_back_verts.c);
+	SDL_Point pbd = project2d(cube_back_verts.d);
+	// First, front face
+	draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfa.x, pfa.y, pfb.x, pfb.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfb.x, pfb.y, pfc.x, pfc.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfc.x, pfc.y, pfd.x, pfd.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfd.x, pfd.y, pfa.x, pfa.y);
+	// Next, back face
+	draw_line_bresenham(pixels, SCREEN_WIDTH, red, pba.x, pba.y, pbb.x, pbb.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbb.x, pbb.y, pbc.x, pbc.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbc.x, pbc.y, pbd.x, pbd.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbd.x, pbd.y, pba.x, pba.y);
+	// Finally, lines connecting the faces
+	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfa.x, pfa.y, pba.x, pba.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfb.x, pfb.y, pbb.x, pbb.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfc.x, pfc.y, pbc.x, pbc.y);
+	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfd.x, pfd.y, pbd.x, pbd.y);
+	const auto cube_end_time = std::chrono::system_clock::now();
+	const auto cube_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(cube_end_time - cube_start_time);
+	std::cout << "Cube: " << cube_us_elapsed.count() << " us" << std::endl;
+	render_texture(renderer, texture, pixels);
+	bool should_quit = wait_for_input();
+	if (should_quit)
+		return EXIT_SUCCESS;
+
+	// Create green triangle
+	Triangle greenTri = {
+		{-200, -250, 0, 0.3},
+		{ 200,   50, 0, 0.1},
+		{  20,  250, 0, 1.0}
+	};
+
 	//using frame_len_fps_60 = std::chrono::duration<float, std::ratio<1, 60>>;
 	// Keep rendering until the user chooses to quit
-	bool should_exit = true;
-	while (should_exit)
+	while (!should_quit)
 	{
-		const auto frame_start_time = std::chrono::system_clock::now();
-
+		//const auto frame_start_time = std::chrono::system_clock::now();
 		std::fill(pixels.begin(), pixels.end(), blank);
 
 		// TRIANGLE
 		// First, draw the shaded triangle
-		const auto shaded_tri_start_time = std::chrono::system_clock::now();
+		//const auto shaded_tri_start_time = std::chrono::system_clock::now();
 		draw_shaded_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
-		const auto shaded_tri_end_time = std::chrono::system_clock::now();
-		const auto shaded_tri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(shaded_tri_end_time - shaded_tri_start_time);
-		std::cout << "Shaded triangle: " << shaded_tri_ms_elapsed.count() << " ms" << std::endl;
+		//const auto shaded_tri_end_time = std::chrono::system_clock::now();
+		//const auto shaded_tri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(shaded_tri_end_time - shaded_tri_start_time);
+		//std::cout << "Shaded triangle: " << shaded_tri_ms_elapsed.count() << " ms" << std::endl;
 		// Then draw the triangle's outline
-		const auto tri_start_time = std::chrono::system_clock::now();
+		//const auto tri_start_time = std::chrono::system_clock::now();
 		draw_triangle(pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
-		const auto tri_end_time = std::chrono::system_clock::now();
-		const auto tri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(tri_end_time - tri_start_time);
-		std::cout << "Triangle outline: " << tri_us_elapsed.count() << " us" << std::endl;
-
-		// CUBE
-		const auto cube_start_time = std::chrono::system_clock::now();
-		SDL_Point pfa = project2d(cube_front_verts.a);
-		SDL_Point pfb = project2d(cube_front_verts.b);
-		SDL_Point pfc = project2d(cube_front_verts.c);
-		SDL_Point pfd = project2d(cube_front_verts.d);
-		SDL_Point pba = project2d(cube_back_verts.a);
-		SDL_Point pbb = project2d(cube_back_verts.b);
-		SDL_Point pbc = project2d(cube_back_verts.c);
-		SDL_Point pbd = project2d(cube_back_verts.d);
-		// First, front face
-		draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfa.x, pfa.y, pfb.x, pfb.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfb.x, pfb.y, pfc.x, pfc.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfc.x, pfc.y, pfd.x, pfd.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfd.x, pfd.y, pfa.x, pfa.y);
-		// Next, back face
-		draw_line_bresenham(pixels, SCREEN_WIDTH, red, pba.x, pba.y, pbb.x, pbb.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbb.x, pbb.y, pbc.x, pbc.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbc.x, pbc.y, pbd.x, pbd.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbd.x, pbd.y, pba.x, pba.y);
-		// Finally, lines connecting the faces
-		draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfa.x, pfa.y, pba.x, pba.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfb.x, pfb.y, pbb.x, pbb.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfc.x, pfc.y, pbc.x, pbc.y);
-		draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfd.x, pfd.y, pbd.x, pbd.y);
-		const auto cube_end_time = std::chrono::system_clock::now();
-		const auto cube_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(cube_end_time - cube_start_time);
-		std::cout << "Cube: " << cube_us_elapsed.count() << " us" << std::endl;
-
-		// Finally, show the results
+		//const auto tri_end_time = std::chrono::system_clock::now();
+		//const auto tri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(tri_end_time - tri_start_time);
+		//std::cout << "Triangle outline: " << tri_us_elapsed.count() << " us" << std::endl;
 		render_texture(renderer, texture, pixels);
 
-		const auto frame_end_time = std::chrono::system_clock::now();
-		const auto frame_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end_time - frame_start_time);
-		std::cout << "Frame: " << frame_ms_elapsed.count() << " ms" << std::endl;
+		//const auto frame_end_time = std::chrono::system_clock::now();
+		//const auto frame_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end_time - frame_start_time);
+		//std::cout << "Frame: " << frame_ms_elapsed.count() << " ms" << std::endl;
 		/*
 		if (frame_ms_elapsed < fps_60)
 			std::this_thread::sleep_for(fps_limit - frame_ms_elapsed);
 		*/
 
-		should_exit = wait_for_input();
+		should_quit = scan_input_for_quit();
 	}
 
 	SDL_DestroyWindow(window);
@@ -244,30 +245,36 @@ void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, const std::vec
 }
 
 
+bool scan_input_for_quit()
+{
+	SDL_Event event;
+	SDL_PollEvent(&event);
+	return (event.type == SDL_QUIT || (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE));
+}
+
+
 bool wait_for_input()
 {
-	bool should_exit = false;
 	bool should_continue = false;
-	SDL_Event event;
+	bool should_quit = false;
 	do
 	{
+		SDL_Event event;
 		SDL_PollEvent(&event);
 		if (event.type == SDL_QUIT)
 		{
 			should_continue = true;
-			should_exit = true;	
+			should_quit = true;	
 		}
 		else if (event.type == SDL_KEYDOWN)
 		{
 			switch (event.key.keysym.sym)
 			{
+				case SDLK_ESCAPE:
+					should_quit = true;
 				case SDLK_RETURN:
 				case SDLK_SPACE:
 					should_continue = true;
-					break;
-				case SDLK_ESCAPE:
-					should_continue = true;
-					should_exit = true;
 					break;
 				default:
 					break;
@@ -275,7 +282,7 @@ bool wait_for_input()
 		}
 	}
 	while (!should_continue);
-	return should_exit;
+	return should_quit;
 }
 
 
