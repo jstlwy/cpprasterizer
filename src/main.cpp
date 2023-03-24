@@ -126,40 +126,40 @@ int main()
 	start_time = std::chrono::system_clock::now();
 	draw_triangle_outline_3d(pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
 	end_time = std::chrono::system_clock::now();
-    render_texture(renderer, texture, pixels);
-    const auto otri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-    std::cout << "Triangle outline: " << otri_us_elapsed.count() << " us" << std::endl;
-    if (wait_for_input())
+	render_texture(renderer, texture, pixels);
+	const auto otri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+	std::cout << "Triangle outline: " << otri_us_elapsed.count() << " us" << std::endl;
+	if (wait_for_input())
 		return EXIT_SUCCESS;
 
 	// FILLED TRIANGLE
-    start_time = std::chrono::system_clock::now();
-    draw_filled_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
-    end_time = std::chrono::system_clock::now();
-    render_texture(renderer, texture, pixels);
-    const auto ftri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-    std::cout << "Filled triangle: " << ftri_us_elapsed.count() << " us" << std::endl;
-    if (wait_for_input())
+	start_time = std::chrono::system_clock::now();
+	draw_filled_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+	end_time = std::chrono::system_clock::now();
+	render_texture(renderer, texture, pixels);
+	const auto ftri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+	std::cout << "Filled triangle: " << ftri_us_elapsed.count() << " us" << std::endl;
+	if (wait_for_input())
 		return EXIT_SUCCESS;
 
 	// SHADED TRIANGLE
-    start_time = std::chrono::system_clock::now();
-    draw_shaded_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
-    end_time = std::chrono::system_clock::now();
-    render_texture(renderer, texture, pixels);
-    const auto stri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    std::cout << "Shaded triangle: " << stri_ms_elapsed.count() << " ms" << std::endl;
-    if (wait_for_input())
+	start_time = std::chrono::system_clock::now();
+	draw_shaded_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+	end_time = std::chrono::system_clock::now();
+	render_texture(renderer, texture, pixels);
+	const auto stri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+	std::cout << "Shaded triangle: " << stri_ms_elapsed.count() << " ms" << std::endl;
+	if (wait_for_input())
 		return EXIT_SUCCESS;
 
 	// FILLED TRIANGLE (BRESENHAM)
-    start_time = std::chrono::system_clock::now();
-    draw_filled_triangle_3d(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
-    end_time = std::chrono::system_clock::now();
-    render_texture(renderer, texture, pixels);
-    const auto btri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
-    std::cout << "Filled triangle (Bresenham): " << btri_us_elapsed.count() << " us" << std::endl;
-    if (wait_for_input())
+	start_time = std::chrono::system_clock::now();
+	draw_filled_triangle_3d(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+	end_time = std::chrono::system_clock::now();
+	render_texture(renderer, texture, pixels);
+	const auto btri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+	std::cout << "Filled triangle (Bresenham): " << btri_us_elapsed.count() << " us" << std::endl;
+	if (wait_for_input())
 		return EXIT_SUCCESS;
 
 	SDL_DestroyTexture(texture);
