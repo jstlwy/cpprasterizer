@@ -3,7 +3,7 @@ An attempt to make a 3D software rasterizer in C++.
 
 **NOTE:**
 Requires SDL2.
-Only tested on macOS at this time.
+Only tested on macOS so far.
 
 To run:
 ```
