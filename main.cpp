@@ -1,9 +1,10 @@
-#include <SDL.h>
+#include <SDL2/SDL.h>
+#include <cassert>
+#include <chrono>
+#include <cmath>
 #include <iomanip>
 #include <ios>
 #include <iostream>
-#include <chrono>
-#include <cmath>
 #include <ostream>
 //#include <thread>
 #include <vector>
@@ -48,21 +49,32 @@ struct Square {
 template <typename T>
 void print_hex(std::ostream& stream, const T value, const int width = 0);
 void print_argb8888(std::uint32_t color);
-void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, const std::vector<std::uint32_t>& pixels);
+void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, std::vector<std::uint32_t>& pixels);
 bool scan_input_for_quit();
 bool wait_for_input();
+
 SDL_Point project2d(const Point3D& p);
 Point3D project_vertex(const Point3D& p);
 std::vector<float> interpolate(float i0, float d0, float i1, float d1);
-void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
-	const int ax, const int ay, const int bx, const int by);
-void draw_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
-	const Point3D p0, const Point3D p1, const Point3D p2);
-void draw_filled_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
-	Point3D p0, Point3D p1, Point3D p2);
-void draw_shaded_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, const std::uint32_t color,
-	Point3D p0, Point3D p1, Point3D p2);
 
+void draw_line_bresenham(std::vector<std::uint32_t>& pixels,
+	const unsigned int width, const std::uint32_t color,
+	const int ax, const int ay, const int bx, const int by);
+void draw_triangle(std::vector<std::uint32_t>& pixels,
+	const unsigned int width, const std::uint32_t color,
+	const Point3D p0, const Point3D p1, const Point3D p2);
+void draw_filled_triangle(std::vector<std::uint32_t>& pixels,
+	const unsigned int width, const std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2);
+void draw_filled_triangle_bres(std::vector<std::uint32_t>& pixels,
+	const unsigned int width, const std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2);
+void draw_filled_triangle_flat_side(std::vector<std::uint32_t>& pixels,
+	const unsigned int width,  const std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2);
+void draw_shaded_triangle(std::vector<std::uint32_t>& pixels,
+	const unsigned int width, std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2);
 
 int main()
 {
@@ -130,7 +142,7 @@ int main()
 	};
 
 	// CUBE
-	const auto cube_start_time = std::chrono::system_clock::now();
+	auto start_time = std::chrono::system_clock::now();
 	SDL_Point pfa = project2d(cube_front_verts.a);
 	SDL_Point pfb = project2d(cube_front_verts.b);
 	SDL_Point pfc = project2d(cube_front_verts.c);
@@ -154,8 +166,8 @@ int main()
 	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfb.x, pfb.y, pbb.x, pbb.y);
 	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfc.x, pfc.y, pbc.x, pbc.y);
 	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfd.x, pfd.y, pbd.x, pbd.y);
-	const auto cube_end_time = std::chrono::system_clock::now();
-	const auto cube_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(cube_end_time - cube_start_time);
+	auto end_time = std::chrono::system_clock::now();
+	const auto cube_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 	std::cout << "Cube: " << cube_us_elapsed.count() << " us" << std::endl;
 	render_texture(renderer, texture, pixels);
 	bool should_quit = wait_for_input();
@@ -169,39 +181,40 @@ int main()
 		{  20,  250, 0, 1.0}
 	};
 
-	//using frame_len_fps_60 = std::chrono::duration<float, std::ratio<1, 60>>;
-	// Keep rendering until the user chooses to quit
-	while (!should_quit)
-	{
-		//const auto frame_start_time = std::chrono::system_clock::now();
-		std::fill(pixels.begin(), pixels.end(), blank);
+	// SHADED TRIANGLE
+    start_time = std::chrono::system_clock::now();
+    draw_shaded_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+    draw_triangle(pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
+    end_time = std::chrono::system_clock::now();
+    render_texture(renderer, texture, pixels);
+    const auto stri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    std::cout << "Shaded triangle: " << stri_ms_elapsed.count() << " ms" << std::endl;
+    wait_for_input();
 
-		// TRIANGLE
-		// First, draw the shaded triangle
-		//const auto shaded_tri_start_time = std::chrono::system_clock::now();
-		draw_shaded_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
-		//const auto shaded_tri_end_time = std::chrono::system_clock::now();
-		//const auto shaded_tri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(shaded_tri_end_time - shaded_tri_start_time);
-		//std::cout << "Shaded triangle: " << shaded_tri_ms_elapsed.count() << " ms" << std::endl;
-		// Then draw the triangle's outline
-		//const auto tri_start_time = std::chrono::system_clock::now();
-		draw_triangle(pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
-		//const auto tri_end_time = std::chrono::system_clock::now();
-		//const auto tri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(tri_end_time - tri_start_time);
-		//std::cout << "Triangle outline: " << tri_us_elapsed.count() << " us" << std::endl;
-		render_texture(renderer, texture, pixels);
+	// FILLED TRIANGLE
+    start_time = std::chrono::system_clock::now();
+    draw_filled_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+    draw_triangle(pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
+    end_time = std::chrono::system_clock::now();
+    render_texture(renderer, texture, pixels);
+    const auto ftri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+    std::cout << "Filled triangle: " << ftri_us_elapsed.count() << " us" << std::endl;
+    wait_for_input();
 
-		//const auto frame_end_time = std::chrono::system_clock::now();
-		//const auto frame_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end_time - frame_start_time);
-		//std::cout << "Frame: " << frame_ms_elapsed.count() << " ms" << std::endl;
-		/*
-		if (frame_ms_elapsed < fps_60)
-			std::this_thread::sleep_for(fps_limit - frame_ms_elapsed);
-		*/
+	// FILLED TRIANGLE (BRESENHAM)
+	/*
+    start_time = std::chrono::system_clock::now();
+    draw_filled_triangle_bres(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+    draw_triangle(pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
+    end_time = std::chrono::system_clock::now();
+    render_texture(renderer, texture, pixels);
+    const auto btri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+    std::cout << "Filled triangle (Bresenham): " << btri_us_elapsed.count() << " us" << std::endl;
+    wait_for_input();
+	*/
 
-		should_quit = scan_input_for_quit();
-	}
-
+	SDL_DestroyTexture(texture);
+	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 	return EXIT_SUCCESS;
@@ -236,12 +249,13 @@ void print_argb8888(std::uint32_t color)
 }
 
 
-void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, const std::vector<std::uint32_t>& pixels)
+void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, std::vector<std::uint32_t>& pixels)
 {
 	SDL_RenderClear(renderer);
 	SDL_UpdateTexture(texture, nullptr, &pixels[0], TEXTURE_PITCH);
 	SDL_RenderCopy(renderer, texture, nullptr, nullptr);
 	SDL_RenderPresent(renderer);
+	std::fill(pixels.begin(), pixels.end(), 0x00FFFFFF);
 }
 
 
@@ -331,11 +345,7 @@ void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int 
 	int x = ax;
 	int y = ay;
 
-	if (dx == 0 && dy == 0)
-	{
-		pixels.at((y * width) + x) = color;
-	}
-	else if (dx == 0)
+	if (dx == 0)
 	{
 		int y_end;
 		if (ay < by)
@@ -376,13 +386,14 @@ void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int 
 	}
 	else if (dx > dy)
 	{
-		int sy = 1;
+		//int sy = 1;
+		int srow = width;
 		int x_end;
 		if (ax < bx)
 		{
 			x_end = bx;
 			if (y > by)
-				sy = -1;
+				srow = -width;
 		}
 		else
 		{
@@ -390,16 +401,17 @@ void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int 
 			x_end = ax;
 			y = by;
 			if (y > ay)
-				sy = -1;
+				srow = -width;
 		}
 
 		const int two_dy = 2 * dy;
 		const int two_diff_dy_dx = 2 * (dy - dx);
 		int p = two_dy - dx;
-		
+		int row = y * width;
+
 		while (x <= x_end)
 		{
-			pixels.at((y * width) + x) = color;
+			pixels.at(row + x) = color;
 			x++;
 			if (p < 0)
 			{
@@ -407,7 +419,8 @@ void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int 
 			}
 			else
 			{
-				y += sy;
+				//y += sy;
+				row += srow;
 				p += two_diff_dy_dx;
 			}
 		}
@@ -434,11 +447,15 @@ void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int 
 		const int two_dx = 2 * dx;
 		const int two_diff_dx_dy = 2 * (dx - dy);
 		int p = two_dx - dy;
-		
-		while (y <= y_end)
+		int row = y * width;
+		const int row_end = y_end * width;
+
+		//while (y <= y_end)
+		while (row <= row_end)
 		{
-			pixels.at((y * width) + x) = color;
-			y++;
+			pixels.at(row + x) = color;
+			//y++;
+			row += width;
 			if (p < 0)
 			{
 				p += two_dx;
@@ -520,7 +537,68 @@ void draw_filled_triangle(std::vector<std::uint32_t>& pixels, const unsigned int
 }
 
 
-void draw_shaded_triangle(std::vector<std::uint32_t>& pixels, const unsigned int width, std::uint32_t color,
+void draw_filled_triangle_bres(std::vector<std::uint32_t>& pixels,
+	const unsigned int width,  const std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2)
+{
+	// Sort points so that y0 <= y1 <= y2
+	if(p1.y < p0.y)
+		std::swap(p1, p0);
+	if(p2.y < p0.y)
+		std::swap(p2, p0);
+	if(p2.y < p1.y)
+		std::swap(p2, p1);
+
+	if (p1.y == p2.y)
+	{
+		// Bottom is flat
+		draw_filled_triangle_flat_side(pixels, width, color, p0, p1, p2);
+	}
+	else if (p0.y == p1.y)
+	{	
+		// Top is flat
+		draw_filled_triangle_flat_side(pixels, width, color, p2, p0, p1);
+	}
+	else
+	{
+		// Split triangle in two.	
+		// Note that y1 < y2, so the program needs to find
+		// the x value where a horizontal line extending from p1
+		// intersects the line between p0 and p2.
+		const float dxdy02 = (p2.x - p0.x) / (p2.y - p0.y);
+		const float y_diff = p1.y - p0.y;
+		const float pmid_x = p0.x + (dxdy02 * y_diff);
+		Point3D pmid = {pmid_x, p1.y, p1.z, p1.h};
+		if (p1.x < pmid_x)
+		{
+			draw_filled_triangle_flat_side(pixels, width, color, p0, p1, pmid);
+			draw_filled_triangle_flat_side(pixels, width, color, p2, p1, pmid);
+		}
+		else
+		{
+			draw_filled_triangle_flat_side(pixels, width, color, p0, pmid, p1);
+			draw_filled_triangle_flat_side(pixels, width, color, p2, pmid, p1);
+		}
+	}
+}
+
+
+void draw_filled_triangle_flat_side(std::vector<std::uint32_t>& pixels,
+	const unsigned int width,  const std::uint32_t color,
+	Point3D p0, Point3D p1, Point3D p2)
+{
+	assert(p1.y == p2.y);
+
+	const int dx10 = std::abs(p1.x - p0.x);
+	const int dy10 = std::abs(p1.y - p0.y);
+
+	const int dx20 = std::abs(p2.x - p0.x);
+	const int dy20 = std::abs(p2.y - p0.y);
+}
+
+
+void draw_shaded_triangle(std::vector<std::uint32_t>& pixels,
+	const unsigned int width, std::uint32_t color,
 	Point3D p0, Point3D p1, Point3D p2)
 {
 	// ARGB8888

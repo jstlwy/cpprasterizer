@@ -1,8 +1,11 @@
+# NOTE: On macOS, you may need to run the following command:
+# codesign -f -s - SDL2.framework
+
 CXX := clang++
 sdlf := -framework SDL2
 sdlh := -I /Library/Frameworks/SDL2.framework/Headers
 CXXFLAGS := -std=c++17 -Wall $(sdlh)
-LDFLAGS := $(sdlf) -F /Library/Frameworks/
+LDFLAGS := $(sdlf) -F /Library/Frameworks
 
 # Declare names that indicate recipes, not files 
 .PHONY: all clean
