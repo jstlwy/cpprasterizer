@@ -1,0 +1,6 @@
+# User-specific
+.DS_Store
+
+# Object and dependency files
+*.o
+*.d

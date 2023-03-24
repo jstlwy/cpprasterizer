@@ -1,5 +1,10 @@
-# NOTE: On macOS, you may need to run the following command:
+# macOS note:
+# You may need to run the following command:
 # codesign -f -s - SDL2.framework
+#
+# Alternatively, in Security & Privacy > Privacy > Developer Tools,
+# allow Terminal.app to run software locally
+# that does not meet the system's security policy.
 
 CXX := clang++
 sdlf := -framework SDL2
@@ -10,10 +15,11 @@ LDFLAGS := $(sdlf) -F /Library/Frameworks
 # Declare names that indicate recipes, not files 
 .PHONY: all clean
 
-src := $(wildcard *.cpp)
-headers := $(patsubst %.cpp, %.h, $(filter-out main.cpp, $(src)))
-#obj := $(patsubst $(srcdir)/%.cpp, $(objdir)/%.o, $(src))
-obj := $(addsuffix .o, $(basename $(src)))
+srcdir := ./src
+objdir := ./obj
+src := $(wildcard $(srcdir)/*.cpp)
+headers := $(patsubst %.cpp, %.h, $(filter-out $(srcdir)/main.cpp, $(src)))
+obj := $(patsubst $(srcdir)/%.cpp, $(objdir)/%.o, $(src))
 dep := $(addsuffix .d, $(basename $(obj)))
 bin := rasterizer
 
@@ -23,7 +29,7 @@ $(bin): $(obj)
 	$(CXX) $(LDFLAGS) $^ -o $@
 
 # Generic object file creation rule
-%.o: %.cpp
+$(objdir)/%.o: $(srcdir)/%.cpp
 	$(CXX) $(CXXFLAGS) -MMD -c $< -o $@
 
 clean:
