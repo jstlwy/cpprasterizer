@@ -1,11 +1,19 @@
+OS := $(shell uname)
+WFLAGS := -Wall -Wextra -Werror
+ifeq ($(OS), Darwin)
 CXX := clang++
-CXXFLAGS := -std=c++17 -F/Library/Frameworks -Wall -Wextra -Werror
-LDFLAGS := -F/Library/Frameworks -framework SDL2
+CXXFLAGS := -std=c++17 -F/Library/Frameworks $(WFLAGS)
+LDFLAGS := -F/Library/Frameworks -framework SDL2 -rpath /Library/Frameworks
+else
+CXX := g++
+CXXFLAGS := -std=c++17 $(WFLAGS)
+LDFLAGS := -lSDL2
+endif
 
 srcdir := ./src
 objdir := ./obj
 src := $(wildcard $(srcdir)/*.cpp)
-headers := $(wildcard $(srcdir)/*.h)
+hdr := $(wildcard $(srcdir)/*.h)
 obj := $(patsubst $(srcdir)/%.cpp, $(objdir)/%.o, $(src))
 dep := $(addsuffix .d, $(basename $(obj)))
 bin := rasterizer
@@ -15,7 +23,7 @@ bin := rasterizer
 all: $(bin)
 
 $(bin): $(obj)
-	$(CXX) $(LDFLAGS) $^ -o $@
+	$(CXX) $^ -o $@ $(LDFLAGS)
 
 $(objdir)/%.o: $(srcdir)/%.cpp
 	$(CXX) -c $(CXXFLAGS) -MMD $< -o $@

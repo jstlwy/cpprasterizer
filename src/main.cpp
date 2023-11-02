@@ -1,12 +1,13 @@
-#include <SDL2/SDL.h>
-#include <chrono>
 #include <iostream>
-#include <vector>
+#include <chrono>
+#include <exception>
 #include "constants.h"
 #include "utils.h"
 #include "point.h"
 #include "line.h"
 #include "triangle.h"
+#include "graphics.h"
+#include <SDL2/SDL.h>
 
 struct Square {
 	Point3D a;
@@ -15,59 +16,23 @@ struct Square {
 	Point3D d;
 };
 
-void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, std::vector<std::uint32_t>& pixels);
+void render_shapes();
 bool wait_for_input();
 
 int main()
 {
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
-	{
-		std::cerr << "Error when initializing SDL: " << SDL_GetError() << std::endl;
-		return EXIT_FAILURE;
+	try {
+		render_shapes();
+	} catch (std::runtime_error &e) {
+		std::cerr << "Error: " << e.what() << std::endl;
+		return 1;
 	}
+	return 0;
+}
 
-	SDL_Window* window = SDL_CreateWindow(
-		"Software Rasterizer",
-		SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED,
-		SCREEN_WIDTH,
-		SCREEN_HEIGHT,
-		SDL_WINDOW_SHOWN
-	);
-	if (window == nullptr)
-	{
-		std::cerr << "Error when creating window: " << SDL_GetError() << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
-	if (renderer == nullptr)
-	{
-		std::cerr << "Error when creating renderer: " << SDL_GetError() << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	SDL_Texture* texture = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STATIC,
-		SCREEN_WIDTH,
-		SCREEN_HEIGHT
-	);
-	if (texture == nullptr)
-	{
-		std::cerr << "Error when creating texture: " << SDL_GetError() << std::endl;
-		return EXIT_FAILURE;
-	}
-
-	// Init colors
-	const std::uint32_t red   = 0xFFFF0000;
-	const std::uint32_t green = 0xFF00FF00;
-	const std::uint32_t blue  = 0xFF0000FF;
-	const std::uint32_t black = 0xFF000000;
-	const std::uint32_t blank = 0x00FFFFFF;
-
-	std::vector<std::uint32_t> pixels(NUM_PIXELS, blank);
+void render_shapes()
+{
+	Graphics gfx;
 
 	// Create a cube
 	Square cube_front_verts = {
@@ -93,121 +58,102 @@ int main()
 	SDL_Point pbb = project_to_2d(cube_back_verts.b);
 	SDL_Point pbc = project_to_2d(cube_back_verts.c);
 	SDL_Point pbd = project_to_2d(cube_back_verts.d);
-	// First, front face
-	draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfa.x, pfa.y, pfb.x, pfb.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfb.x, pfb.y, pfc.x, pfc.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfc.x, pfc.y, pfd.x, pfd.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, blue, pfd.x, pfd.y, pfa.x, pfa.y);
-	// Next, back face
-	draw_line_bresenham(pixels, SCREEN_WIDTH, red, pba.x, pba.y, pbb.x, pbb.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbb.x, pbb.y, pbc.x, pbc.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbc.x, pbc.y, pbd.x, pbd.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, red, pbd.x, pbd.y, pba.x, pba.y);
-	// Finally, lines connecting the faces
-	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfa.x, pfa.y, pba.x, pba.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfb.x, pfb.y, pbb.x, pbb.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfc.x, pfc.y, pbc.x, pbc.y);
-	draw_line_bresenham(pixels, SCREEN_WIDTH, green, pfd.x, pfd.y, pbd.x, pbd.y);
+	// Front face
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, blue, pfa.x, pfa.y, pfb.x, pfb.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, blue, pfb.x, pfb.y, pfc.x, pfc.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, blue, pfc.x, pfc.y, pfd.x, pfd.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, blue, pfd.x, pfd.y, pfa.x, pfa.y);
+	// Back face
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, red, pba.x, pba.y, pbb.x, pbb.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, red, pbb.x, pbb.y, pbc.x, pbc.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, red, pbc.x, pbc.y, pbd.x, pbd.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, red, pbd.x, pbd.y, pba.x, pba.y);
+	// Lines connecting the two faces
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, green, pfa.x, pfa.y, pba.x, pba.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, green, pfb.x, pfb.y, pbb.x, pbb.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, green, pfc.x, pfc.y, pbc.x, pbc.y);
+	draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, green, pfd.x, pfd.y, pbd.x, pbd.y);
 	auto end_time = std::chrono::system_clock::now();
 	const auto cube_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 	std::cout << "Cube: " << cube_us_elapsed.count() << " us" << std::endl;
-	render_texture(renderer, texture, pixels);
-	if (wait_for_input())
-		return EXIT_SUCCESS;
+	gfx.render();
+	if (wait_for_input()) {
+		return;
+	}
 
-	// Create green triangle
+	// TRIANGLE OUTLINE
 	Triangle greenTri = {
 		{-200, -250, 0, 0.3},
 		{ 200,   50, 0, 0.1},
 		{  20,  250, 0, 1.0}
 	};
-
-	// TRIANGLE OUTLINE
 	start_time = std::chrono::system_clock::now();
-	draw_triangle_outline_3d(pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
+	draw_triangle_outline_3d(gfx.pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
 	end_time = std::chrono::system_clock::now();
-	render_texture(renderer, texture, pixels);
+	gfx.render();
 	const auto otri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 	std::cout << "Triangle outline: " << otri_us_elapsed.count() << " us" << std::endl;
-	if (wait_for_input())
-		return EXIT_SUCCESS;
+	if (wait_for_input()) {
+		return;
+	}
 
 	// FILLED TRIANGLE
 	start_time = std::chrono::system_clock::now();
-	draw_filled_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+	draw_filled_triangle(gfx.pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
 	end_time = std::chrono::system_clock::now();
-	render_texture(renderer, texture, pixels);
+	gfx.render();
 	const auto ftri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 	std::cout << "Filled triangle: " << ftri_us_elapsed.count() << " us" << std::endl;
-	if (wait_for_input())
-		return EXIT_SUCCESS;
+	if (wait_for_input()) {
+		return;
+	}
 
 	// SHADED TRIANGLE
 	start_time = std::chrono::system_clock::now();
-	draw_shaded_triangle(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+	draw_shaded_triangle(gfx.pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
 	end_time = std::chrono::system_clock::now();
-	render_texture(renderer, texture, pixels);
+	gfx.render();
 	const auto stri_ms_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 	std::cout << "Shaded triangle: " << stri_ms_elapsed.count() << " ms" << std::endl;
-	if (wait_for_input())
-		return EXIT_SUCCESS;
+	if (wait_for_input()) {
+		return;
+	}
 
 	// FILLED TRIANGLE (BRESENHAM)
 	start_time = std::chrono::system_clock::now();
-	draw_filled_triangle_3d(pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
+	draw_filled_triangle_3d(gfx.pixels, SCREEN_WIDTH, green, greenTri.a, greenTri.b, greenTri.c);
 	end_time = std::chrono::system_clock::now();
-	render_texture(renderer, texture, pixels);
+	gfx.render();
 	const auto btri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 	std::cout << "Filled triangle (Bresenham): " << btri_us_elapsed.count() << " us" << std::endl;
-	if (wait_for_input())
-		return EXIT_SUCCESS;
-
-	SDL_DestroyTexture(texture);
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-	return EXIT_SUCCESS;
+	wait_for_input();
 }
-
-
-void render_texture(SDL_Renderer* renderer, SDL_Texture* texture, std::vector<std::uint32_t>& pixels)
-{
-	SDL_RenderClear(renderer);
-	SDL_UpdateTexture(texture, nullptr, &pixels[0], TEXTURE_PITCH);
-	SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-	SDL_RenderPresent(renderer);
-	std::fill(pixels.begin(), pixels.end(), 0x00FFFFFF);
-}
-
 
 bool wait_for_input()
 {
 	bool should_continue = false;
 	bool should_quit = false;
-	do
-	{
+
+	do {
 		SDL_Event event;
 		SDL_PollEvent(&event);
-		if (event.type == SDL_QUIT)
-		{
+		if (event.type == SDL_QUIT) {
 			should_continue = true;
-			should_quit = true;	
-		}
-		else if (event.type == SDL_KEYDOWN)
-		{
-			switch (event.key.keysym.sym)
-			{
-				case SDLK_ESCAPE:
-					should_quit = true;
-				case SDLK_RETURN:
-				case SDLK_SPACE:
-					should_continue = true;
-					break;
-				default:
-					break;
+			should_quit = true;
+		} else if (event.type == SDL_KEYDOWN) {
+			switch (event.key.keysym.sym) {
+			case SDLK_ESCAPE:
+				should_quit = true;
+				// Intentional fallthrough
+			case SDLK_RETURN:
+			case SDLK_SPACE:
+				should_continue = true;
+				break;
+			default:
+				break;
 			}
 		}
-	}
-	while (!should_continue);
+	} while (!should_continue);
+
 	return should_quit;
 }

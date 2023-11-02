@@ -1,9 +1,8 @@
 #include "utils.h"
 #include <cmath>
-#include <iomanip>
-#include <ios>
-#include <iostream>
+#include <cstdio>
 
+/*
 template <typename T>
 void print_hex(std::ostream& stream, const T value, const int width)
 {
@@ -15,9 +14,11 @@ void print_hex(std::ostream& stream, const T value, const int width)
 		stream << std::setfill('0') << std::setw(width) << std::hex << value;
 	stream.copyfmt(original_formatting);
 }
+*/
 
-void print_argb8888(std::uint32_t color)
+void print_argb8888(const std::uint32_t color)
 {
+	/*
 	const unsigned int a = (color & 0xFF000000) >> 24;
 	const unsigned int r = (color & 0x00FF0000) >> 16;
 	const unsigned int g = (color & 0x0000FF00) >> 8;
@@ -28,19 +29,20 @@ void print_argb8888(std::uint32_t color)
 	print_hex(std::cout, g, 2);
 	print_hex(std::cout, b, 2);
 	std::cout << std::endl;
+	*/
+	std::printf(" A R G B\n%" PRIX32 "\n", color);
 }
 
 // i = independent variable
 // d = dependent variable
-std::vector<float> interpolate(float i0, float d0, float i1, float d1)
+std::vector<float> interpolate(const float i0, const float d0, const float i1, const float d1)
 {
 	const int num_vals = std::round(i1 - i0) + 1;
-	std::vector<float> values;
+	std::vector<float> values(num_vals);
 	const float slope = (d1 - d0) / (i1 - i0);
 	float d = d0;
-	for (int i = 0; i < num_vals; i++)
-	{
-		values.push_back(d);
+	for (float& f : values) {
+		f = d;
 		d += slope;
 	}
 	return values;

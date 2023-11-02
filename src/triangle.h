@@ -1,8 +1,10 @@
 #ifndef TRIANGLE_H
 #define TRIANGLE_H
+
 #include "point.h"
-#include <SDL2/SDL.h>
 #include <vector>
+#include <cstdint>
+#include <SDL2/SDL.h>
 
 struct Triangle {
 	Point3D a;

@@ -1,6 +1,6 @@
 #include "point.h"
-#include "constants.h"
 #include <cmath>
+#include "constants.h"
 
 Point3D project_vertex(const Point3D& p)
 {

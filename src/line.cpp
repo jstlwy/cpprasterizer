@@ -1,65 +1,56 @@
 #include "line.h"
+#include <cstdlib>
 
-void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int width,
-	const std::uint32_t color, const int ax, const int ay, const int bx, const int by)
+void draw_line_bresenham(
+	std::vector<std::uint32_t>& pixels,
+	const unsigned int width,
+	const std::uint32_t color,
+	const int ax, const int ay,
+	const int bx, const int by)
 {
 	const int dx = std::abs(bx - ax);
 	const int dy = std::abs(by - ay);
 	int x = ax;
 	int y = ay;
 
-	if (dx == 0)
-	{
+	if (dx == 0) {
+		// Vertical line
 		int y_end;
-		if (ay < by)
-		{
+		if (ay < by) {
 			y_end = by;
-		}
-		else
-		{
+		} else {
 			y = by;
 			y_end = ay;
 		}
 		int row = y * width;
 		const int row_end = y_end * width;
-		while (row <= row_end)
-		{
+		while (row <= row_end) {
 			pixels.at(row + x) = color;
 			row += width;
 		}
-	}
-	else if (dy == 0)
-	{
+	} else if (dy == 0) {
+		// Horizontal line
 		int x_end;
-		if (ax < bx)
-		{
+		if (ax < bx) {
 			x_end = bx;
-		}
-		else
-		{
+		} else {
 			x = bx;
 			x_end = ax;
 		}
 		const int row = y * width;
-		while (x <= x_end)
-		{
+		while (x <= x_end) {
 			pixels.at(row + x) = color;
 			x++;
 		}
-	}
-	else if (dx > dy)
-	{
+	} else if (dx > dy) {
 		//int sy = 1;
 		int srow = width;
 		int x_end;
-		if (ax < bx)
-		{
+		if (ax < bx) {
 			x_end = bx;
 			if (y > by)
 				srow = -width;
-		}
-		else
-		{
+		} else {
 			x = bx;
 			x_end = ax;
 			y = by;
@@ -72,34 +63,25 @@ void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int 
 		int p = two_dy - dx;
 		int row = y * width;
 
-		while (x <= x_end)
-		{
+		while (x <= x_end) {
 			pixels.at(row + x) = color;
 			x++;
-			if (p < 0)
-			{
+			if (p < 0) {
 				p += two_dy;
-			}
-			else
-			{
+			} else {
 				//y += sy;
 				row += srow;
 				p += two_diff_dy_dx;
 			}
 		}
-	}
-	else
-	{
+	} else {
 		int sx = 1;
 		int y_end;
-		if (ay < by)
-		{
+		if (ay < by) {
 			if (x > bx)
 				sx = -1;
 			y_end = by;
-		}
-		else
-		{
+		} else {
 			x = bx;
 			if (x > ax)
 				sx = -1;
@@ -114,17 +96,13 @@ void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int 
 		const int row_end = y_end * width;
 
 		//while (y <= y_end)
-		while (row <= row_end)
-		{
+		while (row <= row_end) {
 			pixels.at(row + x) = color;
 			//y++;
 			row += width;
-			if (p < 0)
-			{
+			if (p < 0) {
 				p += two_dx;
-			}
-			else
-			{
+			} else {
 				x += sx;
 				p += two_diff_dx_dy;
 			}
@@ -132,31 +110,23 @@ void draw_line_bresenham(std::vector<std::uint32_t>& pixels, const unsigned int 
 	}
 }
 
-
 void inc_bresenham_gentle(int& x, int& y, int& step, int& p, int& e_same, int& e_diff)
 {
 	x += step;
-	if (p < 0)
-	{
+	if (p < 0) {
 		p += e_same;
-	}
-	else
-	{
+	} else {
 		y++;
 		p += e_diff;
 	}
 }
 
-
 void inc_bresenham_steep(int& x, int& y, int& step, int& p, int& e_same, int& e_diff)
 {
 	y++;
-	if (p < 0)
-	{
+	if (p < 0) {
 		p += e_same;
-	}
-	else
-	{
+	} else {
 		x += step;
 		p += e_diff;
 	}
