@@ -73,12 +73,10 @@ void draw_line_bresenham(
 
         for (int x = ax, row = ay * SCREEN_WIDTH; x <= bx; x++) {
             pixels[row + x] = color;
-            if (p < 0) {
-                p += two_dy;
-            } else {
-                row += srow;
-                p += two_diff_dy_dx;
-            }
+            const int mask = p >> 31;
+            const int nMask = ~mask;
+            p += (two_dy & mask) + (two_diff_dy_dx & nMask);
+            row += srow & nMask;
         }
     } else {
         // Slope > 1: Steep lines
@@ -95,12 +93,10 @@ void draw_line_bresenham(
 
         for (int x = ax, row = ay * SCREEN_WIDTH; row <= row_end; row += SCREEN_WIDTH) {
             pixels[row + x] = color;
-            if (p < 0) {
-                p += two_dx;
-            } else {
-                x += sx;
-                p += two_diff_dx_dy;
-            }
+            const int mask = p >> 31;
+            const int nMask = ~mask;
+            p += (two_dx & mask) + (two_diff_dx_dy & nMask);
+            x += sx & nMask;
         }
     }
 }
