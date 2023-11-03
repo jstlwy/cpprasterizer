@@ -6,8 +6,10 @@
 #include <cmath>
 #include <functional>
 
-void draw_filled_triangle(std::vector<std::uint32_t>& pixels,
-	const unsigned int width,  const std::uint32_t color,
+void draw_filled_triangle(
+    std::vector<std::uint32_t>& pixels,
+	const unsigned int width,
+    const std::uint32_t color,
 	Point3D p0, Point3D p1, Point3D p2)
 {
 	// Sort points so that y0 <= y1 <= y2
@@ -33,25 +35,20 @@ void draw_filled_triangle(std::vector<std::uint32_t>& pixels,
 	const int m = floor(x012.size() / 2);
 	std::vector<float> xLeft;
 	std::vector<float> xRight;
-	if (x02.at(m) < x012.at(m))
-	{
+	if (x02.at(m) < x012.at(m)) {
 		xLeft = std::move(x02);
 		xRight = std::move(x012);
-	}
-	else
-	{
+	} else {
 		xLeft = std::move(x012);
 		xRight = std::move(x02);
 	}
 
 	// Draw the horizontal segments
-	for (float y = p0.y; y < p2.y; y++)
-	{
+	for (float y = p0.y; y < p2.y; y++) {
 		const int yPixel = Y_MID_SCREEN - std::round(y);
 		const int row = yPixel * width;
 		int n = static_cast<int>(y - p0.y);
-		for (float x = xLeft.at(n); x < xRight.at(n); x++)
-		{
+		for (float x = xLeft.at(n); x < xRight.at(n); x++) {
 			int xPixel = X_MID_SCREEN + std::round(x);
 			pixels.at(row + xPixel) = color;
 		}
@@ -100,15 +97,12 @@ void draw_shaded_triangle(std::vector<std::uint32_t>& pixels,
 	std::vector<float> xRight;
 	std::vector<float> hRight;
 	const unsigned long m = x012.size() / 2;
-	if (x02.at(m) < x012.at(m))
-	{
+	if (x02.at(m) < x012.at(m)) {
 		xLeft = std::move(x02);
 		hLeft = std::move(h02);
 		xRight = std::move(x012);
 		hRight = std::move(h012);
-	}
-	else
-	{
+	} else {
 		xLeft = std::move(x012);
 		hLeft = std::move(h012);
 		xRight = std::move(x02);
@@ -117,16 +111,14 @@ void draw_shaded_triangle(std::vector<std::uint32_t>& pixels,
 
 	// Draw the horizontal segments
 	const float y0 = p0.y;
-	for (float y = y0; y <= p2.y; y++)
-	{
+	for (float y = y0; y <= p2.y; y++) {
 		const int yPixel = Y_MID_SCREEN - std::round(y);
 		const int row = yPixel * width;
 		int i = static_cast<int>(y - y0);
 		float x_l = xLeft.at(i);
 		float x_r = xRight.at(i);
 		std::vector<float> hSeg = interpolate(x_l, hLeft.at(i), x_r, hRight.at(i));
-		for (float x = x_l; x <= x_r; x++)
-		{
+		for (float x = x_l; x <= x_r; x++) {
 			// Get pixel hue
 			const int j = static_cast<int>(x - x_l);
 			const float h = hSeg.at(j);
@@ -178,8 +170,7 @@ void draw_filled_triangle_flat_side(std::vector<std::uint32_t>& pixels,
 	int y20;
 	int x20_end;
 	int y_end;
-	if (v0.y < v1.y)
-	{
+	if (v0.y < v1.y) {
 		// Top is pointed, bottom is flat,
 		// so start both lines at v0
 		x10 = v0.x;
@@ -189,9 +180,7 @@ void draw_filled_triangle_flat_side(std::vector<std::uint32_t>& pixels,
 		y20 = v0.y;
 		x20_end = v2.x;
 		y_end = v1.y;
-	}
-	else
-	{
+	} else {
 		// Top is flat, bottom is pointed,
 		// so start each line at v1 and v2
 		x10 = v1.x;
@@ -210,15 +199,15 @@ void draw_filled_triangle_flat_side(std::vector<std::uint32_t>& pixels,
 	std::function<void(int&, int&, int&, int&, int&, int&)> inc_func_l10;
 	const int dx10 = std::abs(v0.x - v1.x);
 	const int dy10 = std::abs(v0.y - v1.y);
-	if (dx10 > dy10) // Gentle slope; x always incremented
+	if (dx10 > dy10)
 	{
+        // Gentle slope; x always incremented
 		e10_same = 2 * dy10;
 		e10_diff = 2 * (dy10 - dx10);
 		p10 = e10_same - dx10;
 		inc_func_l10 = inc_bresenham_gentle;
-	}
-	else // Steep slope; y always incremented
-	{
+	} else {
+        // Steep slope; y always incremented
 		e10_same = 2 * dx10;
 		e10_diff = 2 * (dx10 - dy10);
 		p10 = e10_same - dy10;
@@ -232,15 +221,14 @@ void draw_filled_triangle_flat_side(std::vector<std::uint32_t>& pixels,
 	std::function<void(int&, int&, int&, int&, int&, int&)> inc_func_l20;
 	const int dx20 = std::abs(v0.x - v2.x);
 	const int dy20 = std::abs(v0.y - v2.y);
-	if (dx20 > dy20) // Gentle slope; x always incremented
-	{
+	if (dx20 > dy20) {
+        // Gentle slope; x always incremented
 		e20_same = 2 * dy20;
 		e20_diff = 2 * (dy20 - dx20);
 		p20 = e20_same - dx20;
 		inc_func_l20 = inc_bresenham_gentle;
-	}
-	else // Steep slope; y always incremented
-	{
+	} else {
+        // Steep slope; y always incremented
 		e20_same = 2 * dx20;
 		e20_diff = 2 * (dx20 - dy20);
 		p20 = e20_same - dy20;
@@ -248,22 +236,18 @@ void draw_filled_triangle_flat_side(std::vector<std::uint32_t>& pixels,
 	}
 
 	const int row_end = y_end * width;
-	for (int row = y10 * width; row <= row_end; row += width)
-	{
+	for (int row = y10 * width; row <= row_end; row += width) {
 		// Draw row
-		for (int x = x10; x <= x20; x++)
-		{
+		for (int x = x10; x <= x20; x++) {
 			pixels.at(row + x) = color;
 		}
 
 		// Increment both lines
 		const int y_old = y10;
-		while (y10 == y_old)
-		{
+		while (y10 == y_old) {
 			inc_func_l10(x10, y10, s10, p10, e10_same, e10_diff);
 		}
-		while (y20 == y_old)
-		{
+		while (y20 == y_old) {
 			inc_func_l20(x20, y20, s20, p20, e20_same, e20_diff);
 		}
 	}
@@ -282,18 +266,13 @@ void draw_filled_triangle_bres(std::vector<std::uint32_t>& pixels,
 	if(v2.y < v1.y)
 		std::swap(v2, v1);
 
-	if (v1.y == v2.y)
-	{
+	if (v1.y == v2.y) {
 		// Bottom is flat
 		draw_filled_triangle_flat_side(pixels, width, color, v0, v1, v2);
-	}
-	else if (v0.y == v1.y)
-	{	
+	} else if (v0.y == v1.y) {	
 		// Top is flat
 		draw_filled_triangle_flat_side(pixels, width, color, v2, v0, v1);
-	}
-	else
-	{
+	} else {
 		// Split triangle in two.	
 		// Note that y1 < y2, so the program needs to find
 		// the x value where a horizontal line extending from p1
@@ -302,13 +281,10 @@ void draw_filled_triangle_bres(std::vector<std::uint32_t>& pixels,
 		const int y_diff = v1.y - v0.y;
 		const int vmid_x = std::round((dxdy02 * static_cast<float>(y_diff)) + static_cast<float>(v0.x));
 		SDL_Point vmid = {vmid_x, v1.y};
-		if (v1.x < vmid_x)
-		{
+		if (v1.x < vmid_x) {
 			draw_filled_triangle_flat_side(pixels, width, color, v0, v1, vmid);
 			draw_filled_triangle_flat_side(pixels, width, color, v2, v1, vmid);
-		}
-		else
-		{
+		} else {
 			draw_filled_triangle_flat_side(pixels, width, color, v0, vmid, v1);
 			draw_filled_triangle_flat_side(pixels, width, color, v2, vmid, v1);
 		}

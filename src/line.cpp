@@ -1,15 +1,20 @@
 #include "line.h"
-#include <cstdlib>
+#include "constants.h"
 
 void draw_line_bresenham(
 	std::vector<std::uint32_t>& pixels,
 	const unsigned int width,
 	const std::uint32_t color,
-	const int ax, const int ay,
-	const int bx, const int by)
+	const int ax,
+    const int ay,
+	const int bx,
+    const int by)
 {
-	const int dx = std::abs(bx - ax);
-	const int dy = std::abs(by - ay);
+    if (ax < 0 || bx < 0 || ay < 0 || by < 0 || ax >= SCREEN_WIDTH || bx >= SCREEN_WIDTH || ay >= SCREEN_HEIGHT || by >= SCREEN_HEIGHT)
+        return;
+
+	const int dx = bx > ax ? bx - ax : ax - bx;
+	const int dy = by > ay ? by - ay : ay - by;
 	int x = ax;
 	int y = ay;
 
@@ -25,7 +30,7 @@ void draw_line_bresenham(
 		int row = y * width;
 		const int row_end = y_end * width;
 		while (row <= row_end) {
-			pixels.at(row + x) = color;
+			pixels[row + x] = color;
 			row += width;
 		}
 	} else if (dy == 0) {
@@ -39,7 +44,7 @@ void draw_line_bresenham(
 		}
 		const int row = y * width;
 		while (x <= x_end) {
-			pixels.at(row + x) = color;
+			pixels[row + x] = color;
 			x++;
 		}
 	} else if (dx > dy) {
@@ -64,7 +69,7 @@ void draw_line_bresenham(
 		int row = y * width;
 
 		while (x <= x_end) {
-			pixels.at(row + x) = color;
+			pixels[row + x] = color;
 			x++;
 			if (p < 0) {
 				p += two_dy;
@@ -97,7 +102,7 @@ void draw_line_bresenham(
 
 		//while (y <= y_end)
 		while (row <= row_end) {
-			pixels.at(row + x) = color;
+			pixels[row + x] = color;
 			//y++;
 			row += width;
 			if (p < 0) {
