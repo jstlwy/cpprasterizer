@@ -140,24 +140,30 @@ void draw_shaded_triangle(std::vector<std::uint32_t>& pixels,
 }
 
 
-void draw_triangle_outline(std::vector<std::uint32_t>& pixels,
-    const unsigned int width, const std::uint32_t color,
-    const SDL_Point& v0, const SDL_Point& v1, const SDL_Point& v2)
+void draw_triangle_outline(
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
+    const SDL_Point& v0,
+    const SDL_Point& v1,
+    const SDL_Point& v2)
 {
-    draw_line_bresenham(pixels, width, color, v0.x, v0.y, v1.x, v1.y);
-    draw_line_bresenham(pixels, width, color, v1.x, v1.y, v2.x, v2.y);
-    draw_line_bresenham(pixels, width, color, v2.x, v2.y, v0.x, v0.y);
+    draw_line_bresenham(pixels, color, v0.x, v0.y, v1.x, v1.y);
+    draw_line_bresenham(pixels, color, v1.x, v1.y, v2.x, v2.y);
+    draw_line_bresenham(pixels, color, v2.x, v2.y, v0.x, v0.y);
 }
 
 
-void draw_triangle_outline_3d(std::vector<std::uint32_t>& pixels,
-    const unsigned int width, const std::uint32_t color,
-    const Point3D& p0, const Point3D& p1, const Point3D& p2)
+void draw_triangle_outline_3d(
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
+    const Point3D& p0,
+    const Point3D& p1,
+    const Point3D& p2)
 {
     const SDL_Point v0 = project_special(p0);
     const SDL_Point v1 = project_special(p1);
     const SDL_Point v2 = project_special(p2);
-    draw_triangle_outline(pixels, width, color, v0, v1, v2);
+    draw_triangle_outline(pixels, color, v0, v1, v2);
 }
 
 

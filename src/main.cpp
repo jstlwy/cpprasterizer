@@ -23,7 +23,7 @@ int main()
 {
     try {
         render_shapes();
-    } catch (std::runtime_error &e) {
+    } catch (std::runtime_error& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
@@ -59,20 +59,20 @@ void render_shapes()
     SDL_Point pbc = project_to_2d(cube_back_verts.c);
     SDL_Point pbd = project_to_2d(cube_back_verts.d);
     // Front face
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, blue, pfa.x, pfa.y, pfb.x, pfb.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, blue, pfb.x, pfb.y, pfc.x, pfc.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, blue, pfc.x, pfc.y, pfd.x, pfd.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, blue, pfd.x, pfd.y, pfa.x, pfa.y);
+    draw_line_bresenham(gfx.pixels, blue, pfa.x, pfa.y, pfb.x, pfb.y);
+    draw_line_bresenham(gfx.pixels, blue, pfb.x, pfb.y, pfc.x, pfc.y);
+    draw_line_bresenham(gfx.pixels, blue, pfc.x, pfc.y, pfd.x, pfd.y);
+    draw_line_bresenham(gfx.pixels, blue, pfd.x, pfd.y, pfa.x, pfa.y);
     // Back face
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, red, pba.x, pba.y, pbb.x, pbb.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, red, pbb.x, pbb.y, pbc.x, pbc.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, red, pbc.x, pbc.y, pbd.x, pbd.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, red, pbd.x, pbd.y, pba.x, pba.y);
+    draw_line_bresenham(gfx.pixels, red, pba.x, pba.y, pbb.x, pbb.y);
+    draw_line_bresenham(gfx.pixels, red, pbb.x, pbb.y, pbc.x, pbc.y);
+    draw_line_bresenham(gfx.pixels, red, pbc.x, pbc.y, pbd.x, pbd.y);
+    draw_line_bresenham(gfx.pixels, red, pbd.x, pbd.y, pba.x, pba.y);
     // Lines connecting the two faces
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, green, pfa.x, pfa.y, pba.x, pba.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, green, pfb.x, pfb.y, pbb.x, pbb.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, green, pfc.x, pfc.y, pbc.x, pbc.y);
-    draw_line_bresenham(gfx.pixels, SCREEN_WIDTH, green, pfd.x, pfd.y, pbd.x, pbd.y);
+    draw_line_bresenham(gfx.pixels, green, pfa.x, pfa.y, pba.x, pba.y);
+    draw_line_bresenham(gfx.pixels, green, pfb.x, pfb.y, pbb.x, pbb.y);
+    draw_line_bresenham(gfx.pixels, green, pfc.x, pfc.y, pbc.x, pbc.y);
+    draw_line_bresenham(gfx.pixels, green, pfd.x, pfd.y, pbd.x, pbd.y);
     auto end_time = std::chrono::system_clock::now();
     const auto cube_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
     std::cout << "Cube: " << cube_us_elapsed.count() << " us" << std::endl;
@@ -88,7 +88,7 @@ void render_shapes()
         {  20,  250, 0, 1.0}
     };
     start_time = std::chrono::system_clock::now();
-    draw_triangle_outline_3d(gfx.pixels, SCREEN_WIDTH, black, greenTri.a, greenTri.b, greenTri.c);
+    draw_triangle_outline_3d(gfx.pixels, black, greenTri.a, greenTri.b, greenTri.c);
     end_time = std::chrono::system_clock::now();
     gfx.render();
     const auto otri_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
