@@ -43,16 +43,16 @@ Graphics::Graphics()
 Graphics::~Graphics()
 {
     SDL_DestroyTexture(texture);
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }
 
 void Graphics::render()
 {
-	SDL_RenderClear(renderer);
-	SDL_UpdateTexture(texture, nullptr, &pixels[0], TEXTURE_PITCH);
-	SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-	SDL_RenderPresent(renderer);
-	std::fill(pixels.begin(), pixels.end(), 0x00FFFFFF);
+    SDL_RenderClear(renderer);
+    SDL_UpdateTexture(texture, nullptr, &pixels[0], TEXTURE_PITCH);
+    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+    SDL_RenderPresent(renderer);
+    std::fill(pixels.begin(), pixels.end(), 0x00FFFFFF);
 }

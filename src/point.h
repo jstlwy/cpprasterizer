@@ -4,17 +4,17 @@
 #include <SDL2/SDL.h>
 
 struct Point3D {
-	float x;
-	float y;
-	float z;
-	float h;
+    float x;
+    float y;
+    float z;
+    float h;
 };
 
 struct ScreenPoint3D {
-	int x;
-	int y;
-	float z;
-	float h;
+    int x;
+    int y;
+    float z;
+    float h;
 };
 
 Point3D project_vertex(const Point3D& p);
