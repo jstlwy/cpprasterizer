@@ -1,12 +1,13 @@
-OS := $(shell uname)
 WFLAGS := -Wall -Wextra -Werror
+CXXFLAGS := -std=c++17 $(WFLAGS)
+
+OS := $(shell uname)
 ifeq ($(OS), Darwin)
 CXX := clang++
-CXXFLAGS := -std=c++17 -F/Library/Frameworks $(WFLAGS)
+CXXFLAGS += -F/Library/Frameworks
 LDFLAGS := -F/Library/Frameworks -framework SDL2 -rpath /Library/Frameworks
 else
 CXX := g++
-CXXFLAGS := -std=c++17 $(WFLAGS)
 LDFLAGS := -lSDL2
 endif
 

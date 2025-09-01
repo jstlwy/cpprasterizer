@@ -5,10 +5,12 @@
 #include <cstdint>
 
 void draw_line_bresenham(
-    std::vector<std::uint32_t>& pixels,
-    const std::uint32_t color,
-    int ax, int ay,
-    int bx, int by
+    std::vector<uint32_t>& pixels,
+    const uint32_t color,
+    int ax,
+    int ay,
+    int bx,
+    int by
 );
 
 void inc_bresenham_gentle(int& x, int& y, int& step, int& p, int& e_same, int& e_diff);

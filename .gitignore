@@ -1,6 +1,5 @@
-# User-specific
+# macOS
 .DS_Store
-.vscode/
 
 # Binary
 rasterizer

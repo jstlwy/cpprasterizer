@@ -1,35 +1,11 @@
-#include "utils.h"
+#include "utils.hpp"
+#include "constants.hpp"
 #include <cmath>
 #include <cstdio>
+#include <cassert>
 
-/*
-template <typename T>
-void print_hex(std::ostream& stream, const T value, const int width)
+void print_argb8888(const uint32_t color)
 {
-    std::ios original_formatting = std::ios(nullptr);
-    original_formatting.copyfmt(stream);
-    if (width <= 0)
-        stream << std::hex << value;
-    else
-        stream << std::setfill('0') << std::setw(width) << std::hex << value;
-    stream.copyfmt(original_formatting);
-}
-*/
-
-void print_argb8888(const std::uint32_t color)
-{
-    /*
-    const unsigned int a = (color & 0xFF000000) >> 24;
-    const unsigned int r = (color & 0x00FF0000) >> 16;
-    const unsigned int g = (color & 0x0000FF00) >> 8;
-    const unsigned int b = color & 0x000000FF;
-    std::cout << " A R G B" << std::endl;
-    print_hex(std::cout, a, 2);
-    print_hex(std::cout, r, 2);
-    print_hex(std::cout, g, 2);
-    print_hex(std::cout, b, 2);
-    std::cout << std::endl;
-    */
     std::printf(" A R G B\n%" PRIX32 "\n", color);
 }
 
@@ -37,7 +13,7 @@ void print_argb8888(const std::uint32_t color)
 // d = dependent variable
 std::vector<float> interpolate(const float i0, const float d0, const float i1, const float d1)
 {
-    const int num_vals = std::round(i1 - i0) + 1;
+    const size_t num_vals = static_cast<size_t>(std::round(i1 - i0)) + 1;
     std::vector<float> values(num_vals);
     const float slope = (d1 - d0) / (i1 - i0);
     float d = d0;
@@ -46,4 +22,32 @@ std::vector<float> interpolate(const float i0, const float d0, const float i1, c
         d += slope;
     }
     return values;
+}
+
+void upscale(
+    std::vector<uint32_t>& original,
+    const size_t target_width,
+    const size_t target_height,
+    const size_t upscale_factor
+) {
+    assert(original.size() == NUM_PIXELS);
+    assert((target_width * target_height) <= original.size());
+
+    const size_t upscale_width = target_width * upscale_factor;
+    const size_t upscale_height = target_height * upscale_factor;
+    assert(upscale_width <= SCREEN_WIDTH);
+    assert(upscale_height <= SCREEN_HEIGHT);
+    assert((upscale_width * upscale_height) <= original.size());
+
+    std::vector<uint32_t> upscale(original.size(), COLOR_BLANK.raw);
+
+    for (size_t y_up = 0; y_up < upscale_height; y_up++) {
+        const size_t row_up = y_up * SCREEN_WIDTH;
+        const size_t row_orig = (y_up / upscale_factor) * SCREEN_WIDTH;
+        for (size_t x_up = 0; x_up < upscale_width; x_up++) {
+            upscale.at(row_up + x_up) = original.at(row_orig + (x_up / upscale_factor));
+        }
+    }
+
+    original.assign(upscale.begin(), upscale.end());
 }

@@ -1,0 +1,5 @@
+{
+    "fallbackBuildSystem": {
+        "cxxCompilerFlags": ["-std=c++17", "-F/Library/Frameworks"]
+    }
+}

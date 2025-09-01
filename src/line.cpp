@@ -1,10 +1,10 @@
-#include "line.h"
-#include "constants.h"
+#include "line.hpp"
+#include "constants.hpp"
 #include <algorithm>
 
 void draw_horizontal_run(
-    std::vector<std::uint32_t>& pixels,
-    const std::uint32_t color,
+    std::vector<uint32_t>& pixels,
+    const uint32_t color,
     int& row,
     int& x,
     const int srow,
@@ -12,8 +12,8 @@ void draw_horizontal_run(
 );
 
 void draw_vertical_run(
-    std::vector<std::uint32_t>& pixels,
-    const std::uint32_t color,
+    std::vector<uint32_t>& pixels,
+    const uint32_t color,
     int& row,
     int& x,
     const int sx,
@@ -21,13 +21,33 @@ void draw_vertical_run(
 );
 
 void draw_line_bresenham(
-    std::vector<std::uint32_t>& pixels,
-    const std::uint32_t color,
+    std::vector<uint32_t>& pixels,
+    const uint32_t color,
     int ax, int ay,
-    int bx, int by)
-{
-    if (ax < 0 || bx < 0 || ay < 0 || by < 0 || ax >= SCREEN_WIDTH || bx >= SCREEN_WIDTH || ay >= SCREEN_HEIGHT || by >= SCREEN_HEIGHT) {
-        return;
+    int bx, int by
+) {
+    if (ax < 0) {
+        ax = 0;
+    } else if (ax >= SCREEN_WIDTH) {
+        ax = SCREEN_WIDTH - 1;
+    }
+
+    if (bx < 0) {
+        bx = 0;
+    } else if (bx >= SCREEN_WIDTH) {
+        bx = SCREEN_WIDTH - 1;
+    }
+
+    if (ay < 0) {
+        ay = 0;
+    } else if (ay >= SCREEN_HEIGHT) {
+        ay = SCREEN_HEIGHT - 1;
+    }
+
+    if (by < 0) {
+        by = 0;
+    } else if (by >= SCREEN_HEIGHT) {
+        by = SCREEN_HEIGHT - 1;
     }
 
     const int dx = bx > ax ? bx - ax : ax - bx;
@@ -102,13 +122,13 @@ void draw_line_bresenham(
 }
 
 inline void draw_horizontal_run(
-    std::vector<std::uint32_t>& pixels,
-    const std::uint32_t color,
+    std::vector<uint32_t>& pixels,
+    const uint32_t color,
     int& row,
     int& x,
     const int srow,
-    const int runLen)
-{
+    const int runLen
+) {
     for (int i = 0; i < runLen; i++) {
         pixels[row + x] = color;
         x++;
@@ -117,13 +137,13 @@ inline void draw_horizontal_run(
 }
 
 inline void draw_vertical_run(
-    std::vector<std::uint32_t>& pixels,
-    const std::uint32_t color,
+    std::vector<uint32_t>& pixels,
+    const uint32_t color,
     int& row,
     int& x,
     const int sx,
-    const int runLen)
-{
+    const int runLen
+) {
     for (int i = 0; i < runLen; i++) {
         pixels[row + x] = color;
         row += SCREEN_WIDTH;

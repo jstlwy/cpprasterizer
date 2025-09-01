@@ -1,17 +1,19 @@
-#include "triangle.h"
-#include "constants.h"
-#include "line.h"
-#include "utils.h"
+#include "triangle.hpp"
+#include "constants.hpp"
+#include "line.hpp"
+#include "utils.hpp"
 #include <cassert>
 #include <cmath>
 #include <functional>
 
 void draw_filled_triangle(
-    std::vector<std::uint32_t>& pixels,
+    std::vector<uint32_t>& pixels,
     const unsigned int width,
-    const std::uint32_t color,
-    Point3D p0, Point3D p1, Point3D p2)
-{
+    const uint32_t color,
+    Point3D p0,
+    Point3D p1,
+    Point3D p2
+) {
     // Sort points so that y0 <= y1 <= y2
     if (p1.y < p0.y) {
         std::swap(p1, p0);
@@ -58,11 +60,14 @@ void draw_filled_triangle(
     }
 }
 
-
-void draw_shaded_triangle(std::vector<std::uint32_t>& pixels,
-    const unsigned int width, std::uint32_t color,
-    Point3D p0, Point3D p1, Point3D p2)
-{
+void draw_shaded_triangle(
+    std::vector<uint32_t>& pixels,
+    const unsigned int width,
+    uint32_t color,
+    Point3D p0,
+    Point3D p1,
+    Point3D p2
+) {
     // ARGB8888
     const int a = (color & 0xFF000000) >> 24;
     const int r = (color & 0x00FF0000) >> 16;
@@ -141,8 +146,8 @@ void draw_shaded_triangle(std::vector<std::uint32_t>& pixels,
 
 
 void draw_triangle_outline(
-    std::vector<std::uint32_t>& pixels,
-    const std::uint32_t color,
+    std::vector<uint32_t>& pixels,
+    const uint32_t color,
     const SDL_Point& v0,
     const SDL_Point& v1,
     const SDL_Point& v2)
@@ -154,12 +159,12 @@ void draw_triangle_outline(
 
 
 void draw_triangle_outline_3d(
-    std::vector<std::uint32_t>& pixels,
-    const std::uint32_t color,
+    std::vector<uint32_t>& pixels,
+    const uint32_t color,
     const Point3D& p0,
     const Point3D& p1,
-    const Point3D& p2)
-{
+    const Point3D& p2
+) {
     const SDL_Point v0 = project_special(p0);
     const SDL_Point v1 = project_special(p1);
     const SDL_Point v2 = project_special(p2);
@@ -266,10 +271,14 @@ void draw_filled_triangle_flat_side(std::vector<std::uint32_t>& pixels,
 }
 
 
-void draw_filled_triangle_bres(std::vector<std::uint32_t>& pixels,
-    const unsigned int width,  const std::uint32_t color,
-    SDL_Point v0, SDL_Point v1, SDL_Point v2)
-{
+void draw_filled_triangle_bres(
+    std::vector<uint32_t>& pixels,
+    const unsigned int width,
+    const uint32_t color,
+    SDL_Point v0,
+    SDL_Point v1,
+    SDL_Point v2
+) {
     // Sort points so that y0 <= y1 <= y2
     if (v1.y < v0.y) {
         std::swap(v1, v0);
@@ -307,10 +316,14 @@ void draw_filled_triangle_bres(std::vector<std::uint32_t>& pixels,
 }
 
 
-void draw_filled_triangle_3d(std::vector<std::uint32_t>& pixels,
-    const unsigned int width, const std::uint32_t color,
-    Point3D p0, Point3D p1, Point3D p2)
-{
+void draw_filled_triangle_3d(
+    std::vector<uint32_t>& pixels,
+    const unsigned int width,
+    const uint32_t color,
+    Point3D p0,
+    Point3D p1,
+    Point3D p2
+) {
     SDL_Point v0 = project_special(p0);
     SDL_Point v1 = project_special(p1);
     SDL_Point v2 = project_special(p2);

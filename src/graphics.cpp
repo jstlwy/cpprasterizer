@@ -1,11 +1,8 @@
-#include "graphics.h"
-#include "constants.h"
-#include <iostream>
-#include <exception>
-#include "line.h"
+#include "graphics.hpp"
+#include "constants.hpp"
 
 Graphics::Graphics()
-    : pixels(NUM_PIXELS, blank)
+    : pixels(NUM_PIXELS, COLOR_BLANK.raw)
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         throw std::runtime_error("SDL_Init failed");
@@ -54,5 +51,13 @@ void Graphics::render()
     SDL_UpdateTexture(texture, nullptr, pixels.data(), TEXTURE_PITCH);
     SDL_RenderCopy(renderer, texture, nullptr, nullptr);
     SDL_RenderPresent(renderer);
-    std::fill(pixels.begin(), pixels.end(), 0x00FFFFFF);
+    std::fill(pixels.begin(), pixels.end(), COLOR_BLANK.raw);
+}
+
+void Graphics::render_nondestructive()
+{
+    SDL_RenderClear(renderer);
+    SDL_UpdateTexture(texture, nullptr, pixels.data(), TEXTURE_PITCH);
+    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
+    SDL_RenderPresent(renderer);
 }
