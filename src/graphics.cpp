@@ -5,7 +5,7 @@ Graphics::Graphics()
     : pixels(NUM_PIXELS, COLOR_BLANK.raw)
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        throw std::runtime_error("SDL_Init failed");
+        throw std::runtime_error(SDL_GetError());
     }
 
     window = SDL_CreateWindow(
@@ -17,12 +17,12 @@ Graphics::Graphics()
         SDL_WINDOW_SHOWN
     );
     if (window == nullptr) {
-        throw std::runtime_error("SDL_CreateWindow failed");
+        throw std::runtime_error(SDL_GetError());
     }
 
     renderer = SDL_CreateRenderer(window, -1, 0);
     if (renderer == nullptr) {
-        throw std::runtime_error("SDL_CreateRenderer failed");
+        throw std::runtime_error(SDL_GetError());
     }
 
     texture = SDL_CreateTexture(
@@ -33,7 +33,7 @@ Graphics::Graphics()
         SCREEN_HEIGHT
     );
     if (texture == nullptr) {
-        throw std::runtime_error("SDL_CreateTexture failed");
+        throw std::runtime_error(SDL_GetError());
     }
 }
 
@@ -45,19 +45,16 @@ Graphics::~Graphics()
     SDL_Quit();
 }
 
-void Graphics::render()
-{
-    SDL_RenderClear(renderer);
-    SDL_UpdateTexture(texture, nullptr, pixels.data(), TEXTURE_PITCH);
-    SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-    SDL_RenderPresent(renderer);
-    std::fill(pixels.begin(), pixels.end(), COLOR_BLANK.raw);
-}
-
 void Graphics::render_nondestructive()
 {
     SDL_RenderClear(renderer);
     SDL_UpdateTexture(texture, nullptr, pixels.data(), TEXTURE_PITCH);
     SDL_RenderCopy(renderer, texture, nullptr, nullptr);
     SDL_RenderPresent(renderer);
+}
+
+void Graphics::render()
+{
+    render_nondestructive();
+    std::fill(pixels.begin(), pixels.end(), COLOR_BLANK.raw);
 }

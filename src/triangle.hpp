@@ -19,61 +19,61 @@ struct Triangle3D {
 };
 
 void draw_filled_triangle(
-    std::vector<uint32_t>& pixels,
+    std::vector<std::uint32_t>& pixels,
     const unsigned int width,
-    const uint32_t color,
+    const std::uint32_t color,
     Point3D p0,
     Point3D p1,
     Point3D p2
 );
 
 void draw_shaded_triangle(
-    std::vector<uint32_t>& pixels,
+    std::vector<std::uint32_t>& pixels,
     const unsigned int width,
-    uint32_t color,
+    const std::uint32_t color,
     Point3D p0,
     Point3D p1,
     Point3D p2
 );
 
 void draw_triangle_outline(
-    std::vector<uint32_t>& pixels,
-    const uint32_t color,
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
     const SDL_Point& v0,
     const SDL_Point& v1,
     const SDL_Point& v2
 );
 
 void draw_triangle_outline_3d(
-    std::vector<uint32_t>& pixels,
-    const uint32_t color,
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
     const Point3D& p0,
     const Point3D& p1,
     const Point3D& p2
 );
 
 void draw_filled_triangle_bres(
-    std::vector<uint32_t>& pixels,
+    std::vector<std::uint32_t>& pixels,
     const unsigned int width,
-    const uint32_t color,
+    const std::uint32_t color,
     SDL_Point v0,
     SDL_Point v1,
     SDL_Point v2
 );
 
 void draw_filled_triangle_flat_side(
-    std::vector<uint32_t>& pixels,
+    std::vector<std::uint32_t>& pixels,
     const unsigned int width,
-    const uint32_t color,
+    const std::uint32_t color,
     SDL_Point v0,
     SDL_Point p1,
     SDL_Point p2
 );
 
 void draw_filled_triangle_3d(
-    std::vector<uint32_t>& pixels,
+    std::vector<std::uint32_t>& pixels,
     const unsigned int width,
-    const uint32_t color,
+    const std::uint32_t color,
     Point3D p0,
     Point3D p1,
     Point3D p2

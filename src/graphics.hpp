@@ -7,7 +7,7 @@
 
 class Graphics {
 public:
-    std::vector<uint32_t> pixels;
+    std::vector<std::uint32_t> pixels;
 
     Graphics();
     ~Graphics();

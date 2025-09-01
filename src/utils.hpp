@@ -2,8 +2,10 @@
 #define UTILS_H
 
 #include <vector>
+#include <cstdint>
+#include <cstddef>
 
-void print_argb8888(const uint32_t color);
+void print_argb8888(const std::uint32_t color);
 
 std::vector<float> interpolate(
     const float i0,
@@ -13,10 +15,10 @@ std::vector<float> interpolate(
 );
 
 void upscale(
-    std::vector<uint32_t>& original,
-    const size_t orig_width,
-    const size_t orig_height,
-    const size_t upscale_factor
+    std::vector<std::uint32_t>& original,
+    const std::size_t orig_width,
+    const std::size_t orig_height,
+    const std::size_t upscale_factor
 );
 
 #endif

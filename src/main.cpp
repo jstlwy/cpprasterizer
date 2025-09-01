@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <cstddef>
 #include "constants.hpp"
 #include "utils.hpp"
 #include "point.hpp"
@@ -148,9 +149,9 @@ void render_shapes()
     // TINY TRIANGLE UPSCALED
     // Integer upscale to new buffer
     start_time = std::chrono::system_clock::now();
-    static constexpr size_t orig_width = 256;
-    static constexpr size_t orig_height = 224;
-    static constexpr size_t upscale_factor = 4;
+    static constexpr std::size_t orig_width = 256;
+    static constexpr std::size_t orig_height = 224;
+    static constexpr std::size_t upscale_factor = 4;
     upscale(gfx.pixels, orig_width, orig_height, upscale_factor);
     end_time = std::chrono::system_clock::now();
     const auto ttus_us_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);

@@ -5,8 +5,8 @@
 #include <cstdint>
 
 void draw_line_bresenham(
-    std::vector<uint32_t>& pixels,
-    const uint32_t color,
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
     int ax,
     int ay,
     int bx,

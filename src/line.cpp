@@ -3,8 +3,8 @@
 #include <algorithm>
 
 void draw_horizontal_run(
-    std::vector<uint32_t>& pixels,
-    const uint32_t color,
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
     int& row,
     int& x,
     const int srow,
@@ -12,8 +12,8 @@ void draw_horizontal_run(
 );
 
 void draw_vertical_run(
-    std::vector<uint32_t>& pixels,
-    const uint32_t color,
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
     int& row,
     int& x,
     const int sx,
@@ -21,8 +21,8 @@ void draw_vertical_run(
 );
 
 void draw_line_bresenham(
-    std::vector<uint32_t>& pixels,
-    const uint32_t color,
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
     int ax, int ay,
     int bx, int by
 ) {
@@ -122,8 +122,8 @@ void draw_line_bresenham(
 }
 
 inline void draw_horizontal_run(
-    std::vector<uint32_t>& pixels,
-    const uint32_t color,
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
     int& row,
     int& x,
     const int srow,
@@ -137,8 +137,8 @@ inline void draw_horizontal_run(
 }
 
 inline void draw_vertical_run(
-    std::vector<uint32_t>& pixels,
-    const uint32_t color,
+    std::vector<std::uint32_t>& pixels,
+    const std::uint32_t color,
     int& row,
     int& x,
     const int sx,
