@@ -1,5 +1,5 @@
 WFLAGS := -Wall -Wextra -Werror
-CXXFLAGS := -std=c++17 $(WFLAGS)
+CXXFLAGS := -std=c++17 $(WFLAGS) -MMD -MP
 
 OS := $(shell uname)
 ifeq ($(OS), Darwin)
@@ -27,7 +27,9 @@ $(bin): $(obj)
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 $(objdir)/%.o: $(srcdir)/%.cpp
-	$(CXX) -c $(CXXFLAGS) -MMD $< -o $@
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+-include $(dep)
 
 clean:
 	rm -f $(obj) $(dep) $(bin)
